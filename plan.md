@@ -1,6 +1,6 @@
 | Cal Week | Proj Week | Tasks | Comments |
 |:--------:|:---------:|:-----:|:--------:|
-| 5        | 1         |literature review |          |
+| 5        | 1         |literature review, recreate patchTST experiments |          |
 | 6        | 2         |       |          |
 | 7        | 3         |       |          |
 | 8        | 4         |       |          |
