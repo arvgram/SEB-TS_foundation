@@ -1,12 +1,12 @@
 | Cal Week | Proj Week | Tasks | Comments |
 |:--------:|:---------:|:-----:|:--------:|
 | 5        | 1         |literature review, recreate patchTST experiments |          |
-| 6        | 2         |       |          |
-| 7        | 3         |       |          |
+| 6        | 2         |Make own patchTST experiments, understand args       |          |
+| 7        | 3         |Create own model objects, investigate components and how they change|          |
 | 8        | 4         |       |          |
 | 9        | 5         |       |          |
-| 10       | 6         |       |          |
-| 11       | 7         |       |          |
+| 10       | 6         |Finish phase 1       |          |
+| 11       | 7         |Structure report       |          |
 | 12       | 8         |       |          |
 | 13       | 9         |       |          |
 | 14       | 10        |       |          |
