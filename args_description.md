@@ -28,8 +28,14 @@
 - `patch_len`: P, the length of the patches, the tokens
 - `stride`: S, the non-overlapping region between two consecutive patches
 - `padding_patch`: repeat the last number of the input sequence S number of times
-- `revin`: REVin, Reversable instance normalization, essentially subtracting mean and dividing by variance for each channel in lookback: $$ \hat{x}_{k t}^{(i)}=\left(\frac{x_{k t}^{(i)}-\mathbb{E}_t\left[x_{k t}^{(i)}\right]}{\sqrt{\mathbb{V}\left[x_{k t}^{(i)}\right]+\epsilon}}\right)$$ and then adding it after prediction: $$ \hat{y}_{k t}^{(i)}=\sqrt{\mathbb{V}\left[x_{k t}^{(i)}\right]+\epsilon} \cdot\left(\tilde{y}_{k t}^{(i)}\right)+\mathbb{E}_t\left[x_{k t}^{(i)}\right] $$
-- `affine`: for REVin, includes trainable parameters that allows flexibility in the location/scale shift: $$ \hat{x}_{k t}^{(i)}=\gamma_k\left(\frac{x_{k t}^{(i)}-\mathbb{E}_t\left[x_{k t}^{(i)}\right]}{\sqrt{\mathbb{V}\left[x_{k t}^{(i)}\right]+\epsilon}}\right)+\beta_k $$ which renders output:$$ \hat{y}_{k t}^{(i)}=\sqrt{\mathbb{V}\left[x_{k t}^{(i)}\right]+\epsilon} \cdot\left(\frac{\tilde{y}_{k t}^{(i)}-\beta_k}{\gamma_k}\right)+\mathbb{E}_t\left[x_{k t}^{(i)}\right] $$
+- `revin`: REVin, Reversable instance normalization, essentially subtracting mean and dividing by variance for each channel in lookback: 
+
+$$ \hat{x}_{k t}^{(i)}=\left(\frac{x_{k t}^{(i)}-\mathbb{E}_t\left[x_{k t}^{(i)}\right]}{\sqrt{\mathbb{V}\left[x_{k t}^{(i)}\right]+\epsilon}}\right)$$ and then adding it after prediction: $$ \hat{y}_{k t}^{(i)}=\sqrt{\mathbb{V}\left[x_{k t}^{(i)}\right]+\epsilon} \cdot\left(\tilde{y}_{k t}^{(i)}\right)+\mathbb{E}_t\left[x_{k t}^{(i)}\right] $$
+
+- `affine`: for REVin, includes trainable parameters that allows flexibility in the location/scale shift: 
+
+$$ \hat{x}_{k t}^{(i)}=\gamma_k\left(\frac{x_{k t}^{(i)}-\mathbb{E}_t\left[x_{k t}^{(i)}\right]}{\sqrt{\mathbb{V}\left[x_{k t}^{(i)}\right]+\epsilon}}\right)+\beta_k $$ which renders output:$$ \hat{y}_{k t}^{(i)}=\sqrt{\mathbb{V}\left[x_{k t}^{(i)}\right]+\epsilon} \cdot\left(\frac{\tilde{y}_{k t}^{(i)}-\beta_k}{\gamma_k}\right)+\mathbb{E}_t\left[x_{k t}^{(i)}\right] $$
+
 - `subtract_last`: using last value in lookback for normalisation instead of mean in revIN. It is not mentioned in revIN paper.
 - `decomposition`: if enabled, the PatchTST-model object consists of two different PatchTST_backbone modules and a `series_decompostion`. The `series_decompostion` object returns a moving average and a residual, and these are sent to different backbones (`model_trend` and `model_res`).
 - `kernel_size`: is passed to PyTorch `AvgPool1D`, specifies the length of the moving average in decomposition (if it is enabled)
