@@ -1,5 +1,5 @@
 | Cal Week | Proj Week | Tasks | Comments |
-|:--------:|:---------:|:-----:|:--------:|
+|:--------:|:---------:|:-----|:--------:|
 | 5        | 1         |literature review, recreate patchTST experiments|          |
 | 6        | 2         |Make own patchTST experiments, understand args       |          |
 | 7        | 3         |Create own model objects, investigate components, data generation|          |
