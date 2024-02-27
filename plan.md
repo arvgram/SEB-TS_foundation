@@ -7,7 +7,7 @@
 | 9        | 5         |Transfer learning, understand `DLinear` layer|Train on one corpus, test on another|
 | 10       | 6         |Finish phase 1       |          |
 | 11       | 7         |Structure report, specify experiments/questions|What do we want to investigate/answer?|
-| 12       | 8         |More report work       |          |
+| 12       | 8         |More report work       |Specify metrics for experiments   |
 | 13       | 9         |Experiment|          |
 | 14       | 10        |Experiment|          |
 | 15       | 11        |Experiment|          |
