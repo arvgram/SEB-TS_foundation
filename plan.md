@@ -15,8 +15,8 @@
 | 17       | 13        |Experiment/Write report      |          |
 | 18       | 14        |Experiment/Write report       |          |
 | 19       | 15        |Write report       |          |
-| 20       | 16        |Write report      |          |
-| 21       | 17        |Write report       |          |
+| 20       | 16        |Write report      |Send a draft to Andreas (supervisor)|
+| 21       | 17        |Write report       |Send to examiner      |
 | 22       | 18        |Present in school      |          |
 | 23       | 19        |Away       |          |
 | 24       | 20        |Present at SEB/Silo | |
