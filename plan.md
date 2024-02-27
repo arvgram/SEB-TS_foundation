@@ -11,11 +11,12 @@
 | 13       | 9         |Experiment|          |
 | 14       | 10        |Experiment|          |
 | 15       | 11        |Experiment|          |
-| 16       | 12        |Experiment|          |
-| 17       | 13        |       |          |
-| 18       | 14        |Write report       |          |
+| 16       | 12        |Experiment/Write report|Present topic/our work at SEB          |
+| 17       | 13        |Experiment/Write report      |          |
+| 18       | 14        |Experiment/Write report       |          |
 | 19       | 15        |Write report       |          |
 | 20       | 16        |Write report      |          |
 | 21       | 17        |Write report       |          |
 | 22       | 18        |Present in school      |          |
-| 23       | 19        |       |          |
+| 23       | 19        |Away       |          |
+| 24       | 20        |Present at SEB/Silo | |
