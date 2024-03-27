@@ -1,0 +1,3 @@
+[submodule "PatchTST"]
+	path = PatchTST
+	url = https://github.com/yuqinie98/PatchTST.git
