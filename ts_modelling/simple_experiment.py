@@ -1,8 +1,13 @@
 import os
+import time
+
+import numpy as np
+import torch
 
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
 from PatchTST.PatchTST_supervised.data_provider.data_factory import data_provider
 from PatchTST.PatchTST_supervised.models.PatchTST import Model as PatchTST
+from torch import load
 from torch import optim
 from torch import nn
 
@@ -53,8 +58,10 @@ class SimpleExp(Exp_Basic):
         return model
 
     def train(self):
+        tot_time_start = time.time()
+
         train_data, train_loader = self._get_data(flag='train')
-        vali_data, vali_loader = self._get_data(flag='val')
+        val_data, val_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
 
         save_path = os.path.join(self.args.checkpoints, self.args.model_name)
@@ -62,7 +69,7 @@ class SimpleExp(Exp_Basic):
             os.makedirs(save_path)
 
         train_steps = len(train_loader)
-        early_stop = EarlyStopping(
+        early_stopping = EarlyStopping(
             patience=self.args.patience,
             verbose=self.args.verbose,
         )
@@ -72,6 +79,7 @@ class SimpleExp(Exp_Basic):
         scheduler = self._select_lr_scheduler(optimiser, train_steps)
 
         for epoch in range(self.args.train_epochs):
+            epoch_time_start = time.time()
             train_loss = []
 
             self.model.train()
@@ -82,20 +90,65 @@ class SimpleExp(Exp_Basic):
 
                 outputs = self.model(batch_x)
 
-                f_dim = -1 if self.args.features is 'MS' else 0
+                f_dim = -1 if self.args.features == 'MS' else 0
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
                 loss = criterion(outputs, batch_y)
                 train_loss.append(loss.item())
 
+                if (i+1) % self.args.batch_log_interval == 0:
+                    print(f'train batch: {i+1} | Loss: {loss.item():.7f}')
 
+                loss.backward()
+                optimiser.step()
+                scheduler.step()
 
+            train_loss = np.average(train_loss)
+            val_loss = self.validate(val_data, val_loader, criterion)
+            test_loss = self.validate(test_data, test_loader, criterion)
 
+            if (epoch+1) % self.args.epoch_log_interval == 0:
+                print(
+                    f'epoch: {epoch+1}, '
+                    f'train loss: {train_loss:.7}, '
+                    f'validation loss: {val_loss:}, '
+                    f'test loss: {test_loss}'
+                )
+                print(
+                    f'epoch time: {epoch_time_start-time.time()}'
+                )
+            early_stopping(val_loss=val_loss, model=self.model, path=save_path)
+            if early_stopping.early_stop:
+                print('Early stopping')
+                break
+            if self.args.verbose:
+                print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
 
+        best_model = self.model.load_state_dict(load(os.join(save_path, 'checkpoint.pth')))
+        return best_model
 
+    def validate(self, val_data, val_loader, criterion):
+        total_loss = []
+        self.model.eval()
+
+        with torch.no_grad():
+            for i, (batch_x, batch_y) in enumerate(val_loader):
+                batch_x = batch_x.float().to(self.device)
+                batch_y = batch_y.float().to(self.device)
+
+                outputs = self.model(batch_x)
+
+                f_dim = -1 if self.args.features == 'MS' else 0
+                outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
+
+                loss = criterion(outputs, batch_y)
+                total_loss.append(loss)
+
+        self.model.train()
+        return np.average(total_loss)
 
     def predict(self):
-
-    def evaluate(self):
+        pass
 
 
