@@ -1,26 +1,58 @@
 # device:
-use_gpu: true
-use_multi_gpu: false
+use_gpu: 0
+use_multi_gpu: 0
+gpu: 0
 
 # data & directories
 data: custom
-root_path: ts_modelling/
-data_path: data/
-checkpoints: checkpoints/
+root_path: ts_modelling/data
+data_path: custom.csv
+checkpoints: ./checkpoints # where to store model weights
+model_name: PTST_test
 
-# modelling:
+# target:
 features: S # S = univariate, M = multivariate, MS = multi predict uni
 target: signal # name of target column in data if MS
 
+# modelling:
+model: PatchTST
+pred_len: 192
+seq_len: 336 # lookback window
+c_in: 1
+
+# model params:
+# dims:
+e_layers: 3 # number of stacked encoders
+n_heads: 4
+d_model: 128 # latent space dim
+d_ff: 128 # feed forward network
+
+# dropout
+dropout: 0.3 # dropout in W_P embed layer (before encoder)
+fc_dropout: 0.3 # dropout in pretrain head
+head_dropout: 0.0
+
+revin: 1 # reversible instance normalisation
+affine: 0 # affine transformation in revin
+subtract_last:
+
+# setting:
+decomposition: 0 # decomposition into trend and residual
+kernel_size: 25 # moving average window in decomposition
+individual: 0
+
 # training
 lr: 0.0001  # max learning rate in annealing
+lr_scheduler: one_cycle_lr # currently the only supported
 lr_pct_start: 0.1 # what percent of max learning rate
 loss: MSE # currently supports MSE, L1/MAE
 train_epochs: 10
+patience: 10
 
 # communication
-verbose: true # if 
-batch_log_interval
+verbose: true # if true then it will print early stopping and learning rate status
+batch_log_interval: 100 # the number of batches between status print
+epoch_log_interval: 5 # the number of epochs between status print
 
 
 

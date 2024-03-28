@@ -3,6 +3,7 @@ import time
 
 import numpy as np
 import torch
+from torch.optim import Adam
 
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
 from PatchTST.PatchTST_supervised.data_provider.data_factory import data_provider
@@ -17,7 +18,9 @@ from PatchTST.PatchTST_supervised.utils.tools import EarlyStopping
 class SimpleExp(Exp_Basic):
     """Trying to build a minimised experiment class for our needs
     """
+
     def __init__(self, args):
+        print('this is a changer version')
         super(SimpleExp, self).__init__(args)  # sets the device (GPU/CPU)
 
     def _get_data(self, flag):
@@ -48,7 +51,6 @@ class SimpleExp(Exp_Basic):
             )
         }
         return lr_schedulers[self.args.lr_scheduler]
-
 
     def _build_model(self):  # allow for other models
         model_dict = {
@@ -96,26 +98,26 @@ class SimpleExp(Exp_Basic):
                 loss = criterion(outputs, batch_y)
                 train_loss.append(loss.item())
 
-                if (i+1) % self.args.batch_log_interval == 0:
-                    print(f'train batch: {i+1} | Loss: {loss.item():.7f}')
+                if (i + 1) % self.args.batch_log_interval == 0:
+                    print(f'train batch: {i + 1} | Loss: {loss.item():.7f}')
 
                 loss.backward()
                 optimiser.step()
                 scheduler.step()
 
             train_loss = np.average(train_loss)
-            val_loss = self.validate(val_data, val_loader, criterion)
-            test_loss = self.validate(test_data, test_loader, criterion)
+            val_loss = self.validate(val_loader, criterion)
+            test_loss = self.validate(test_loader, criterion)
 
-            if (epoch+1) % self.args.epoch_log_interval == 0:
+            if (epoch + 1) % self.args.epoch_log_interval == 0:
                 print(
-                    f'epoch: {epoch+1}, '
+                    f'epoch: {epoch + 1}, '
                     f'train loss: {train_loss:.7}, '
                     f'validation loss: {val_loss:}, '
                     f'test loss: {test_loss}'
                 )
                 print(
-                    f'epoch time: {epoch_time_start-time.time()}'
+                    f'epoch time: {epoch_time_start - time.time()}'
                 )
             early_stopping(val_loss=val_loss, model=self.model, path=save_path)
             if early_stopping.early_stop:
@@ -133,7 +135,7 @@ class SimpleExp(Exp_Basic):
         print(f'Total training time: {minutes} minutes {seconds} seconds')
         return best_model
 
-    def validate(self, val_data, val_loader, criterion):
+    def validate(self, val_loader, criterion):
         total_loss = []
         self.model.eval()
 
@@ -156,5 +158,3 @@ class SimpleExp(Exp_Basic):
 
     def predict(self):
         pass
-
-
