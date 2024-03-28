@@ -1,5 +1,13 @@
 .ipynb_checkpoints
-venv/
+
 .DS_Store/
 .idea/
 
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
