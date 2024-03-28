@@ -1,0 +1,28 @@
+# device:
+use_gpu: true
+use_multi_gpu: false
+
+# data & directories
+data: custom
+root_path: ts_modelling/
+data_path: data/
+checkpoints: checkpoints/
+
+# modelling:
+features: S # S = univariate, M = multivariate, MS = multi predict uni
+target: signal # name of target column in data if MS
+
+# training
+lr: 0.0001  # max learning rate in annealing
+lr_pct_start: 0.1 # what percent of max learning rate
+loss: MSE # currently supports MSE, L1/MAE
+train_epochs: 10
+
+# communication
+verbose: true # if 
+batch_log_interval
+
+
+
+
+

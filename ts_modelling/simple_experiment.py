@@ -25,7 +25,7 @@ class SimpleExp(Exp_Basic):
         return data_set, data_loader
 
     def _select_optimizer(self):  # function that is not required right now but if we want to add flexibility
-        model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
+        model_optim = optim.Adam(self.model.parameters(), lr=self.args.lr)
         return model_optim
 
     def _select_criterion(self):
@@ -42,7 +42,7 @@ class SimpleExp(Exp_Basic):
             'one_cycle_lr': optim.OneCycleLR(
                 optimizer=optimiser,
                 steps_per_epoch=train_steps,
-                pct_start=self.args.lr_pct_start or 0.3,
+                pct_start=self.args.lr_pct_start or 0.1,
                 epochs=self.args.train_epochs,
                 max_lr=self.args.lr
             )
@@ -125,6 +125,12 @@ class SimpleExp(Exp_Basic):
                 print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
 
         best_model = self.model.load_state_dict(load(os.join(save_path, 'checkpoint.pth')))
+
+        total_training_time = time.time() - tot_time_start
+        minutes = total_training_time // 60
+        seconds = total_training_time % 60
+
+        print(f'Total training time: {minutes} minutes {seconds} seconds')
         return best_model
 
     def validate(self, val_data, val_loader, criterion):
