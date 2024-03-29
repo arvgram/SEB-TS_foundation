@@ -95,7 +95,7 @@ class DataProducer:
         self.df = df
 
     def generate_csv(self, file_name='custom'):
-        if not self.df:
+        if self.df is None:
             self.create_df()
 
         os.makedirs(self.path, exist_ok=True)
@@ -103,10 +103,10 @@ class DataProducer:
         self.df.to_csv(data_path, index=False)
 
     def plot_data(self, ):
-        if not self.df:
+        if self.df is None:
             self.create_df()
-            
-        plt.plot(data['date'][:24 * 7 * 3], df['signal'][:24 * 7 * 3])
+
+        plt.plot(self.df['date'][:24*7*3], self.df.iloc[:24*7*3, 1:])
         plt.title('First three weeks')
         plt.xlabel('Date')
         plt.ylabel('Signal')
@@ -115,7 +115,7 @@ class DataProducer:
         plt.tight_layout()
         plt.show()
 
-        plt.plot(df['date'], df['signal'])
+        plt.plot(self.df['date'], self.df.iloc[:, 1:])
         plt.title('Full set')
         plt.xlabel('Date')
         plt.ylabel('Signal')
