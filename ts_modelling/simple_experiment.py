@@ -7,7 +7,7 @@ from torch.optim import Adam
 
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
 from PatchTST.PatchTST_supervised.data_provider.data_factory import data_provider
-from PatchTST.PatchTST_supervised.models.PatchTST import Model as PatchTST
+from PatchTST.PatchTST_supervised.models import PatchTST
 from torch import load
 from torch import optim
 from torch import nn
@@ -56,7 +56,7 @@ class SimpleExp(Exp_Basic):
         model_dict = {
             'PatchTST': PatchTST,
         }
-        model = model_dict[self.args.model]
+        model = model_dict[self.args.model].Model(self.args).float()
         return model
 
     def train(self):
