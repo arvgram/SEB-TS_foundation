@@ -77,9 +77,9 @@ class DataProducer:
 
         idx = 0
         for b in breaks:
-            trend[idx:b] = trend[idx] + slope * random.uniform(-1, 1) * np.arange(b - idx)
+            trend[idx:b] = trend[idx] + slope * random.uniform(-1, 1) * np.arange(b-idx)
             idx = b - 1
-        trend[idx:] = trend[idx] + slope * random.uniform(-1, 1) * np.arange(self.length - idx)
+        trend[idx:] = trend[idx] + slope * random.uniform(-1, 1) * np.arange(self.length-idx)
         return trend
 
     def create_df(self):

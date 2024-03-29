@@ -2,7 +2,7 @@
 
 .DS_Store/
 .idea/
-
+ts_modelling/data/
 # Environments
 .env
 .venv
