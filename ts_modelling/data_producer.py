@@ -1,14 +1,18 @@
+import os
 import random
 
 import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 
 
 class DataProducer:
-    def __init__(self, length, n_vars, path):
+    def __init__(self, length, n_vars, path, noise_amp=2):
         self.length = length
         self.n_vars = n_vars
         self.path = path
-        self.data = np.zeros([length, n_vars])
+        self.data = -1+noise_amp*np.random.random([length, n_vars])
+        self.df = None
 
     def add_rw(self, amplitude):
         self.data += self._generate_random_walk(self.length, self.n_vars, amplitude)
@@ -19,8 +23,9 @@ class DataProducer:
         return random_walk
 
     def add_arma(self, ar_components, ma_components):
+
         for var in range(self.n_vars):
-            self.data[var] += self._generate_arma(
+            self.data[:, var] += self._generate_arma(
                 nbr_steps=self.length,
                 ar_components=ar_components,
                 ma_components=ma_components
@@ -28,7 +33,6 @@ class DataProducer:
 
     def _generate_arma(self, nbr_steps, ar_components, ma_components):
         from statsmodels.tsa import arima_process
-        import numpy as np
         arma = 0
 
         ar_components = ar_components or []
@@ -49,20 +53,76 @@ class DataProducer:
             )
         return arma
 
-    def add_sine(self, freq_amp: [(float,float)]):
+    def add_sine(self, freq_amp: [(float, float)]):
         for var in range(self.n_vars):
-            self.data += self._generate_sine(freq_amp)
+            self.data[:, var] += self._generate_sine(self.length, freq_amp)
 
-
-    def _generate_sine(self, freq_amp: [(float,float)]):
-        time_array = np.linspace(0, self.length, self.length)
-        sine_component = np.zeros(self.length)
+    def _generate_sine(self, nbr_steps, freq_amp: [(float, float)]):
+        time_array = np.linspace(0, nbr_steps, nbr_steps)
+        sine_component = np.zeros(nbr_steps)
         for freq, amp in freq_amp:
-            sine_component += amp * np.sin((time_array * 2 * np.pi) * freq + random.uniform(0, 1) * 2 * np.pi)
+            sine_component += amp * np.sin(
+                (time_array*2*np.pi)*freq+random.uniform(0, 1)*2*np.pi
+            )
         return sine_component
 
+    def add_trend(self, nbr_trends, slope):
+        for var in range(self.n_vars):
+            self.data[:, var] += self._generate_trend(nbr_trends, slope)
 
+    def _generate_trend(self, nbr_trends, slope):
+        trend = np.zeros(self.length)
+        breaks = random.sample(range(1, self.length - 1), nbr_trends - 1)
+        breaks.sort()
 
+        idx = 0
+        for b in breaks:
+            trend[idx:b] = trend[idx] + slope * random.uniform(-1, 1) * np.arange(b - idx)
+            idx = b - 1
+        trend[idx:] = trend[idx] + slope * random.uniform(-1, 1) * np.arange(self.length - idx)
+        return trend
+
+    def create_df(self):
+        start_date = '2024-01-01'
+        df = pd.DataFrame(self.data)
+
+        dates = pd.date_range(start=start_date, periods=self.length, freq='H')
+        df.insert(0, 'date', dates)
+
+        column_names = [f"signal_{i + 1}" if col != 'date' else 'date' for i, col in enumerate(df.columns)]
+        df.columns = column_names
+
+        self.df = df
+
+    def generate_csv(self, file_name='custom'):
+        if not self.df:
+            self.create_df()
+
+        os.makedirs(self.path, exist_ok=True)
+        data_path = os.path.join(self.path, file_name)
+        self.df.to_csv(data_path, index=False)
+
+    def plot_data(self, ):
+        if not self.df:
+            self.create_df()
+            
+        plt.plot(data['date'][:24 * 7 * 3], df['signal'][:24 * 7 * 3])
+        plt.title('First three weeks')
+        plt.xlabel('Date')
+        plt.ylabel('Signal')
+        plt.xticks(rotation=45)
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+        plt.plot(df['date'], df['signal'])
+        plt.title('Full set')
+        plt.xlabel('Date')
+        plt.ylabel('Signal')
+        plt.xticks(rotation=45)
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
 
     def generate_data(self,
                       root_path, data_file_name, plot=True,

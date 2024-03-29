@@ -5,7 +5,7 @@ gpu: 0
 
 # data & directories
 data: custom
-root_path: ts_modelling/data
+root_path: ./data
 data_path: custom.csv
 checkpoints: ./checkpoints # where to store model weights
 model_name: PTST_test

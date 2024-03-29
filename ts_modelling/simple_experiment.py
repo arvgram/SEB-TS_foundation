@@ -20,7 +20,6 @@ class SimpleExp(Exp_Basic):
     """
 
     def __init__(self, args):
-        print('this is a changer version')
         super(SimpleExp, self).__init__(args)  # sets the device (GPU/CPU)
 
     def _get_data(self, flag):
