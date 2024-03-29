@@ -94,7 +94,7 @@ class DataProducer:
 
         self.df = df
 
-    def generate_csv(self, file_name='custom'):
+    def generate_csv(self, file_name='custom.csv'):
         if self.df is None:
             self.create_df()
 
