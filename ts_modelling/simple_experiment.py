@@ -3,7 +3,6 @@ import time
 
 import numpy as np
 import torch
-from torch.optim import Adam
 
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
 from PatchTST.PatchTST_supervised.data_provider.data_factory import data_provider
@@ -115,7 +114,7 @@ class SimpleExp(Exp_Basic):
                     f'test loss: {test_loss}'
                 )
                 print(
-                    f'epoch time: {epoch_time_start - time.time()}'
+                    f'epoch time: {time.time()-epoch_time_start}'
                 )
             early_stopping(val_loss=val_loss, model=self.model, path=save_path)
             if early_stopping.early_stop:
@@ -130,7 +129,7 @@ class SimpleExp(Exp_Basic):
         minutes = total_training_time // 60
         seconds = total_training_time % 60
 
-        print(f'Total training time: {minutes} minutes {seconds} seconds')
+        print(f'Total training time: {int(minutes)} minutes {seconds} seconds')
         return best_model
 
     def validate(self, val_loader, criterion):
@@ -154,5 +153,24 @@ class SimpleExp(Exp_Basic):
         self.model.train()
         return np.average(total_loss)
 
+    def test(self):
+        """
+        data can be path to dataset or numpy array. If unspecified tests on test chunk of training data
+        returns average test loss, saves trues and predictions to folder input_true_pred
+        """
+        # todo: implement
+        pass
+
     def predict(self):
         pass
+
+    def self_supervised_pretrain(self):
+        """
+        pretrains model backbone by attaching fill-in-patch head.
+        """
+
+    def train_predict_head(self):
+        """
+        attaches predict head and trains only head
+        """
+
