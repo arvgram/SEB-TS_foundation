@@ -2,6 +2,7 @@
 use_gpu: 0
 use_multi_gpu: 0
 gpu: 0
+num_workers: 0
 
 # data & directories
 data: custom
@@ -12,7 +13,7 @@ model_name: PTST_test
 
 # target:
 features: S # S = univariate, M = multivariate, MS = multi predict uni
-target: signal # name of target column in data if MS
+target: signal_1 # name of target column in data if MS
 
 # modelling:
 model: PatchTST
@@ -55,8 +56,8 @@ lr_pct_start: 0.1 # what percent of max learning rate
 loss: MSE # currently supports MSE, L1/MAE
 
 patience: 10
-train_epochs: 10
-batch_size: 64
+train_epochs: 2
+batch_size: 32
 
 
 # communication

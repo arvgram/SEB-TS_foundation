@@ -41,7 +41,7 @@ class SimpleExp(Exp_Basic):
 
     def _select_lr_scheduler(self, optimiser, train_steps):  # allow for others
         lr_schedulers = {
-            'one_cycle_lr': optim.OneCycleLR(
+            'one_cycle_lr': optim.lr_scheduler.OneCycleLR(
                 optimizer=optimiser,
                 steps_per_epoch=train_steps,
                 pct_start=self.args.lr_pct_start or 0.1,
@@ -85,10 +85,9 @@ class SimpleExp(Exp_Basic):
 
             self.model.train()
 
-            for i, (batch_x, batch_y) in enumerate(train_loader):
+            for i, (batch_x, batch_y, _, _) in enumerate(train_loader):
                 optimiser.zero_grad()
-                batch_x, batch_y = batch_x.float.to(self.device), batch_y.float.to(self.device)
-
+                batch_x, batch_y = batch_x.float().to(self.device), batch_y.float().to(self.device)
                 outputs = self.model(batch_x)
 
                 f_dim = -1 if self.args.features == 'MS' else 0
@@ -125,7 +124,7 @@ class SimpleExp(Exp_Basic):
             if self.args.verbose:
                 print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
 
-        best_model = self.model.load_state_dict(load(os.join(save_path, 'checkpoint.pth')))
+        best_model = self.model.load_state_dict(load(os.path.join(save_path, 'checkpoint.pth')))
 
         total_training_time = time.time() - tot_time_start
         minutes = total_training_time // 60
@@ -139,7 +138,7 @@ class SimpleExp(Exp_Basic):
         self.model.eval()
 
         with torch.no_grad():
-            for i, (batch_x, batch_y) in enumerate(val_loader):
+            for i, (batch_x, batch_y, _, _) in enumerate(val_loader):
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float().to(self.device)
 

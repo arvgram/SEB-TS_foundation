@@ -85,12 +85,13 @@ class DataProducer:
     def create_df(self):
         start_date = '2024-01-01'
         df = pd.DataFrame(self.data)
+        column_names = [f"signal_{i + 1}" if col != 'date' else 'date' for i, col in enumerate(df.columns)]
+        df.columns = column_names
 
         dates = pd.date_range(start=start_date, periods=self.length, freq='H')
         df.insert(0, 'date', dates)
 
-        column_names = [f"signal_{i + 1}" if col != 'date' else 'date' for i, col in enumerate(df.columns)]
-        df.columns = column_names
+
 
         self.df = df
 
