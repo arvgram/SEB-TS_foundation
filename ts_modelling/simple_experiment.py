@@ -38,6 +38,16 @@ class SimpleExp(Exp_Basic):
         criterion = losses[self.args.loss]
         return criterion
 
+    def _prepare_for_criterion(self, pred, x, y, task):
+        if task == 'prediction':
+            f_dim = -1 if self.args.features == 'MS' else 0
+            outputs = pred[:, -self.args.pred_len:, f_dim:]
+            batch_y = y[:, -self.args.pred_len:, f_dim:]
+
+        elif task == 'self_supervised':
+            
+
+
     def _select_lr_scheduler(self, optimiser, train_steps):  # allow for others
         lr_schedulers = {
             'one_cycle_lr': optim.lr_scheduler.OneCycleLR(
@@ -88,6 +98,19 @@ class SimpleExp(Exp_Basic):
                 optimiser.zero_grad()
                 batch_x, batch_y = batch_x.float().to(self.device), batch_y.float().to(self.device)
                 outputs = self.model(batch_x)
+
+                # supervised training outputs = [bs x nvars x pred_len] forward prediction
+                # self supervised outputs = [bs x nvars x seq_len + stride padding]
+
+                # prepare for criterion by creating comparable entities.
+                # supervised we want the relevant predictions and ground truth
+                # self supervised we want the predictions for masked patches and true masked patches
+                pred, true = _prepare_for_criterion(
+                    pred=outputs,
+                    x=batch_x,
+                    y=batch_y,
+                    task=self.args.training_task
+                )
 
                 f_dim = -1 if self.args.features == 'MS' else 0
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
@@ -168,6 +191,13 @@ class SimpleExp(Exp_Basic):
         """
         pretrains model backbone by attaching fill-in-patch head.
         """
+        # get data
+
+        # setup save path
+
+        # setup early stopping
+
+        # setup
 
     def train_predict_head(self):
         """
