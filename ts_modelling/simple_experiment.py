@@ -1,5 +1,6 @@
 import os
 import time
+import random
 
 import numpy as np
 import torch
@@ -7,11 +8,11 @@ import torch
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
 from PatchTST.PatchTST_supervised.data_provider.data_factory import data_provider
 from PatchTST.PatchTST_supervised.models import PatchTST
+from PatchTST.PatchTST_supervised.utils.tools import EarlyStopping
+
 from torch import load
 from torch import optim
 from torch import nn
-
-from PatchTST.PatchTST_supervised.utils.tools import EarlyStopping
 
 
 class SimpleExp(Exp_Basic):
@@ -38,19 +39,6 @@ class SimpleExp(Exp_Basic):
         criterion = losses[self.args.loss]
         return criterion
 
-    def _prepare_for_criterion(self, pred, x, y, task):
-        if task == 'prediction':
-            f_dim = -1 if self.args.features == 'MS' else 0
-            pred = pred[:, -self.args.pred_len:, f_dim:]
-            true = y[:, -self.args.pred_len:, f_dim:]
-
-        elif task == 'self_supervised':
-            pass
-
-        return pred, true
-
-
-
     def _select_lr_scheduler(self, optimiser, train_steps):  # allow for others
         lr_schedulers = {
             'one_cycle_lr': optim.lr_scheduler.OneCycleLR(
@@ -69,6 +57,47 @@ class SimpleExp(Exp_Basic):
         }
         model = model_dict[self.args.model].Model(self.args).float()
         return model
+
+    def infer_and_get_loss(self, batch_x, batch_y, model, criterion, task):
+        if task == 'prediction':
+            # get output, calculate loss as criterion of pred and true
+            outputs = model(batch_x)
+            f_dim = -1 if self.args.features == 'MS' else 0
+            pred = outputs[:, -self.args.pred_len:, f_dim:]
+            true = batch_y[:, -self.args.pred_len:, f_dim:]
+            loss = criterion(pred, true)
+
+        elif task == 'self_supervised':
+            # if self supervised:
+            #   make copy unmasked_batch_x
+            #   draw random masked_indices of batch_x,
+            #   set masked_indices of batch_x to zero
+            #   predict using masked batch_x
+            #   extract values at masked_indices from batch_x and output
+            #   calculate loss as mse between output and unmasked_batch_x at indices
+
+            unmasked_batch_x = batch_x.clone()
+            num_patches = int((self.args.seq_len - self.args.patch_len) / self.args.stride + 1)
+            num_indices = int(self.args.mask_pct*num_patches)
+            mask_indices_mtx = torch.zeros_like(batch_x, dtype=torch.bool)
+            for b in range(batch_x.shape[0]):
+                mask_start_indices = sorted(random.sample(range(num_patches), num_indices))
+                mask_indices = []
+                for index in mask_start_indices:
+                    start = index * self.args.stride
+                    end = start + self.args.patch_len
+                    mask_indices.extend(range(start, end))
+                batch_x[b, mask_indices, :] = 0
+                mask_indices_mtx[b, mask_indices, :] = True
+
+            outputs = model(batch_x)
+            masked_preds = outputs[mask_indices_mtx]
+            masked_trues = unmasked_batch_x[mask_indices_mtx]
+
+            loss = criterion(masked_preds, masked_trues)
+
+
+        return loss
 
     def train(self):
         tot_time_start = time.time()
@@ -100,26 +129,26 @@ class SimpleExp(Exp_Basic):
             for i, (batch_x, batch_y, _, _) in enumerate(train_loader):
                 optimiser.zero_grad()
                 batch_x, batch_y = batch_x.float().to(self.device), batch_y.float().to(self.device)
-                outputs = self.model(batch_x)
 
                 # supervised training outputs = [bs x nvars x pred_len] forward prediction
                 # self supervised outputs = [bs x nvars x seq_len + stride padding]
 
-                # prepare for criterion by creating comparable entities.
-                # supervised we want the relevant predictions and ground truth
-                # self supervised we want the predictions for masked patches and true masked patches
-
-                pred, true = _prepare_for_criterion(
-                    pred=outputs,
-                    x=batch_x,
-                    y=batch_y,
-                    task=self.args.training_task
+                # infer_and_get_loss performs the training task (prediction/self_supervised) and returns the batch loss
+                loss = self.infer_and_get_loss(
+                    batch_x=batch_x,
+                    batch_y=batch_y,
+                    model=self.model,
+                    criterion=criterion,
+                    task=self.args.training_task,
                 )
 
-                f_dim = -1 if self.args.features == 'MS' else 0
-                outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
-                loss = criterion(outputs, batch_y)
+                # outputs = self.model(batch_x)
+                #
+                # f_dim = -1 if self.args.features == 'MS' else 0
+                # outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                # batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
+                # loss = criterion(outputs, batch_y)
+
                 train_loss.append(loss.item())
 
                 if (i + 1) % self.args.batch_log_interval == 0:
@@ -141,7 +170,7 @@ class SimpleExp(Exp_Basic):
                     f'test loss: {test_loss}'
                 )
                 print(
-                    f'epoch time: {time.time()-epoch_time_start}'
+                    f'epoch time: {time.time() - epoch_time_start}'
                 )
             early_stopping(val_loss=val_loss, model=self.model, path=save_path)
             if early_stopping.early_stop:
@@ -207,4 +236,3 @@ class SimpleExp(Exp_Basic):
         """
         attaches predict head and trains only head
         """
-

@@ -15,7 +15,11 @@ class PretrainHead(nn.Module):
 
         x = x.transpose(2, 3)  # [bs x nvars x num_patch x d_model]
         x = self.linear(self.dropout(x))  # [bs x nvars x num_patch x patch_len]
-        x = x.flatten(start_dim=2)
+
+        # new:
+        stride = x.shape[3]
+        x = x.flatten(start_dim=2)  # [bs x nvars x num_patch*patch_len]
+        x = x[:, :, :-stride]  # [bs x nvars x num_patch*patch_len] without the padded last values
 
         # old:
         # x = x.permute(0, 2, 1, 3)  # [bs x num_patch x nvars x patch_len]
