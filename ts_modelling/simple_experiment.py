@@ -41,11 +41,14 @@ class SimpleExp(Exp_Basic):
     def _prepare_for_criterion(self, pred, x, y, task):
         if task == 'prediction':
             f_dim = -1 if self.args.features == 'MS' else 0
-            outputs = pred[:, -self.args.pred_len:, f_dim:]
-            batch_y = y[:, -self.args.pred_len:, f_dim:]
+            pred = pred[:, -self.args.pred_len:, f_dim:]
+            true = y[:, -self.args.pred_len:, f_dim:]
 
         elif task == 'self_supervised':
-            
+            pass
+
+        return pred, true
+
 
 
     def _select_lr_scheduler(self, optimiser, train_steps):  # allow for others
@@ -105,6 +108,7 @@ class SimpleExp(Exp_Basic):
                 # prepare for criterion by creating comparable entities.
                 # supervised we want the relevant predictions and ground truth
                 # self supervised we want the predictions for masked patches and true masked patches
+
                 pred, true = _prepare_for_criterion(
                     pred=outputs,
                     x=batch_x,
