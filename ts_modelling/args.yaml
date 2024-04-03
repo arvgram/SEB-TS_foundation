@@ -55,11 +55,14 @@ lr_scheduler: one_cycle_lr # currently the only supported
 lr_pct_start: 0.1 # what percent of max learning rate
 loss: MSE # currently supports MSE, L1/MAE
 
-training_task: supervised
+training_task: self_supervised
 mask_pct: 0.4
 
-patience: 10
-train_epochs: 10
+patience: 15
+train_epochs: 30
+finetune_epochs: 10
+pretrain_epochs: 10
+train_head_epochs: 10
 batch_size: 32
 
 
