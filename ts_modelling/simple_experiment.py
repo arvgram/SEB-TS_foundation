@@ -59,7 +59,7 @@ class SimpleExp(Exp_Basic):
         return model
 
     def infer_and_get_loss(self, batch_x, batch_y, model, criterion, task):
-        if task == 'prediction':
+        if task == 'supervised':
             # get output, calculate loss as criterion of pred and true
             outputs = model(batch_x)
             f_dim = -1 if self.args.features == 'MS' else 0
@@ -69,16 +69,14 @@ class SimpleExp(Exp_Basic):
 
         elif task == 'self_supervised':
             # if self supervised:
-            #   make copy unmasked_batch_x
             #   draw random masked_indices of batch_x,
-            #   set masked_indices of batch_x to zero
-            #   predict using masked batch_x
+            #   predict using masked batch_x elementwise multiplied with NOT masked
             #   extract values at masked_indices from batch_x and output
             #   calculate loss as mse between output and unmasked_batch_x at indices
 
-            unmasked_batch_x = batch_x.clone()
+            # unmasked_batch_x = batch_x.clone()
             num_patches = int((self.args.seq_len - self.args.patch_len) / self.args.stride + 1)
-            num_indices = int(self.args.mask_pct*num_patches)
+            num_indices = int(self.args.mask_pct * num_patches)
             mask_indices_mtx = torch.zeros_like(batch_x, dtype=torch.bool)
             for b in range(batch_x.shape[0]):
                 mask_start_indices = sorted(random.sample(range(num_patches), num_indices))
@@ -87,15 +85,14 @@ class SimpleExp(Exp_Basic):
                     start = index * self.args.stride
                     end = start + self.args.patch_len
                     mask_indices.extend(range(start, end))
-                batch_x[b, mask_indices, :] = 0
+                batch_x[b, mask_indices, :] = 0  # todo: not ready for mv data
                 mask_indices_mtx[b, mask_indices, :] = True
 
-            outputs = model(batch_x)
-            masked_preds = outputs[mask_indices_mtx]
-            masked_trues = unmasked_batch_x[mask_indices_mtx]
+            outputs = model(batch_x * ~mask_indices_mtx)
+            masked_outputs = outputs * mask_indices_mtx
+            trues = batch_x * mask_indices_mtx
 
-            loss = criterion(masked_preds, masked_trues)
-
+            loss = criterion(masked_outputs, trues)
 
         return loss
 
@@ -131,7 +128,7 @@ class SimpleExp(Exp_Basic):
                 batch_x, batch_y = batch_x.float().to(self.device), batch_y.float().to(self.device)
 
                 # supervised training outputs = [bs x nvars x pred_len] forward prediction
-                # self supervised outputs = [bs x nvars x seq_len + stride padding]
+                # self supervised outputs = [bs x nvars x seq_len]
 
                 # infer_and_get_loss performs the training task (prediction/self_supervised) and returns the batch loss
                 loss = self.infer_and_get_loss(
@@ -197,13 +194,14 @@ class SimpleExp(Exp_Basic):
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float().to(self.device)
 
-                outputs = self.model(batch_x)
+                loss = self.infer_and_get_loss(
+                    batch_x=batch_x,
+                    batch_y=batch_y,
+                    model=self.model,
+                    criterion=criterion,
+                    task=self.args.training_task
+                )
 
-                f_dim = -1 if self.args.features == 'MS' else 0
-                outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
-
-                loss = criterion(outputs, batch_y)
                 total_loss.append(loss)
 
         self.model.train()
