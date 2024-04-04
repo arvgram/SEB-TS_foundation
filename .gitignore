@@ -3,6 +3,8 @@
 .DS_Store
 .idea/
 ts_modelling/data/
+ts_modelling/checkpoints/
+ts_modelling/test_results/
 # Environments
 .env
 .venv
