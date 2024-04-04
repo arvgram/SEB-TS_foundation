@@ -6,7 +6,8 @@ import numpy as np
 import torch
 
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
-from PatchTST.PatchTST_supervised.data_provider.data_factory import data_provider
+# from PatchTST.PatchTST_supervised.data_provider.data_factory import data_provider
+from simple_data_provider import SimpleDataProvider
 from PatchTST.PatchTST_supervised.models import PatchTST
 from PatchTST.PatchTST_supervised.utils.tools import EarlyStopping
 from PatchTST.PatchTST_supervised.layers.PatchTST_backbone import Flatten_Head
@@ -24,7 +25,9 @@ class SimpleExp(Exp_Basic):
         super(SimpleExp, self).__init__(args)  # sets the device (GPU/CPU)
 
     def _get_data(self, flag):
-        data_set, data_loader = data_provider(self.args, flag)  # todo: make own simpler dataloader, w/o freqenc etc
+        # data_set, data_loader = data_provider(self.args, flag)  # todo: make own simpler dataloader, w/o freqenc etc
+        data_provider = SimpleDataProvider(self.args, flag)
+        data_set, data_loader = data_provider.get_dataset_data_loader()
         return data_set, data_loader
 
     def _select_optimizer(self):  # function that is not required right now but if we want to add flexibility
@@ -168,7 +171,7 @@ class SimpleExp(Exp_Basic):
 
             self.model.train()
 
-            for i, (batch_x, batch_y, _, _) in enumerate(train_loader):
+            for i, (batch_x, batch_y) in enumerate(train_loader):
                 optimiser.zero_grad()
                 batch_x, batch_y = batch_x.float().to(self.device), batch_y.float().to(self.device)
 
@@ -228,7 +231,7 @@ class SimpleExp(Exp_Basic):
         self.model.eval()
 
         with torch.no_grad():
-            for i, (batch_x, batch_y, _, _) in enumerate(val_loader):
+            for i, (batch_x, batch_y) in enumerate(val_loader):
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float().to(self.device)
 
@@ -270,12 +273,12 @@ class SimpleExp(Exp_Basic):
         self.freeze_backbone(freeze=False)
         self.train(n_epochs=n_epochs)
 
-    def test(self):
+    def test(self, data_path=None):
         """
         data can be path to dataset or numpy array. If unspecified tests on test chunk of training data
         returns average test loss, saves trues and predictions to folder input_true_pred
         """
-        # todo: implement
+
         pass
 
     def predict(self):
