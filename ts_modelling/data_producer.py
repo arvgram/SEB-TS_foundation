@@ -88,10 +88,8 @@ class DataProducer:
         column_names = [f"signal_{i + 1}" if col != 'date' else 'date' for i, col in enumerate(df.columns)]
         df.columns = column_names
 
-        dates = pd.date_range(start=start_date, periods=self.length, freq='H')
+        dates = pd.date_range(start=start_date, periods=self.length, freq='h')
         df.insert(0, 'date', dates)
-
-
 
         self.df = df
 

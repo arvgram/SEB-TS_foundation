@@ -43,7 +43,7 @@ $$ \hat{x}_{k t}^{(i)}=\gamma_k\left(\frac{x_{k t}^{(i)}-\mathbb{E}_t\left[x_{k 
 
 **Generic model arguments**
 - `embed_type`: The type of embedding of input data to be used in all of the -former models in the paper. 0: default, 1: val+temp+pos 2: val+temp, 3: val+pos, 4: val
-- `enc_in`: Encoder input size. Transferred to `c_in` and `n_vars` in PatchTST.
+- `enc_in`: Number of input channels/vars. Transferred to `c_in` and `n_vars` in PatchTST.
 - `dec_in`: Decoder input size. Seems to only be used in -former models.
 - `c_out`: Output dimension
 - `d_model`: latent space dimension
