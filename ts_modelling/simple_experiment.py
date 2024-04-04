@@ -6,11 +6,12 @@ import numpy as np
 import torch
 
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
-# from PatchTST.PatchTST_supervised.data_provider.data_factory import data_provider
-from simple_data_provider import SimpleDataProvider
 from PatchTST.PatchTST_supervised.models import PatchTST
 from PatchTST.PatchTST_supervised.utils.tools import EarlyStopping
 from PatchTST.PatchTST_supervised.layers.PatchTST_backbone import Flatten_Head
+
+from results_utils import write_to_metrics_csv
+from simple_data_provider import SimpleDataProvider
 from model_components import PretrainHead
 
 from torch import optim
@@ -23,6 +24,10 @@ class SimpleExp(Exp_Basic):
 
     def __init__(self, args):
         super(SimpleExp, self).__init__(args)  # sets the device (GPU/CPU)
+        self.save_path = os.path.join(
+            self.args.checkpoints,
+            self.args.model_name,
+        )
 
     def _get_data(self, flag):
         # data_set, data_loader = data_provider(self.args, flag)  # todo: make own simpler dataloader, w/o freqenc etc
@@ -106,10 +111,27 @@ class SimpleExp(Exp_Basic):
 
         return loss
 
+    def load_model(self, model_path=None):
+        head = self.model.model.head
+        if model_path is None:
+            if os.path.exists(self.save_path + '/supervised'):
+                if not isinstance(head, Flatten_Head):
+                    self.swap_head('supervised')
+                model_path = self.save_path + '/supervised'
+            elif os.path.exists(self.save_path + '/self_supervised'):
+                if not isinstance(head, PretrainHead):
+                    self.swap_head('self_supervised')
+                model_path = self.save_path + '/self_supervised'
+            else:
+                print('Please specify a valid model')
+                return
+            model_path += '/checkpoint.pth'
+
+        self.model.load_state_dict(torch.load(model_path))
+
     def swap_head(self, new_head):
         """Changes head on model to type corresponding to new_head
         """
-
         self.model = self._swap_head(model=self.model, new_head=new_head)
 
     def _swap_head(self, model, new_head):
@@ -117,7 +139,7 @@ class SimpleExp(Exp_Basic):
             model.model.head = Flatten_Head(
                 individual=self.args.individual,
                 n_vars=self.args.enc_in,
-                nf=self.args.d_model*(self.num_patches+1),
+                nf=self.args.d_model * (self.num_patches + 1),
                 target_window=self.args.pred_len,
                 head_dropout=self.args.head_dropout
             )
@@ -151,9 +173,7 @@ class SimpleExp(Exp_Basic):
         val_data, val_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
 
-        save_path = os.path.join(self.args.checkpoints, self.args.model_name, self.args.training_task)
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
+        os.makedirs(self.save_path, exist_ok=True)
 
         train_steps = len(train_loader)
         early_stopping = EarlyStopping(
@@ -210,14 +230,14 @@ class SimpleExp(Exp_Basic):
                 print(
                     f'epoch time: {time.time() - epoch_time_start}'
                 )
-            early_stopping(val_loss=val_loss, model=self.model, path=save_path)
+            early_stopping(val_loss=val_loss, model=self.model, path=self.save_path)
             if early_stopping.early_stop:
                 print('Early stopping')
                 break
             if self.args.verbose:
                 print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
 
-        self.model.load_state_dict(torch.load(os.path.join(save_path, 'checkpoint.pth')))
+        self.model.load_state_dict(torch.load(os.path.join(self.save_path, 'checkpoint.pth')))
 
         total_training_time = time.time() - tot_time_start
         minutes = total_training_time // 60
@@ -274,13 +294,74 @@ class SimpleExp(Exp_Basic):
         self.train(n_epochs=n_epochs)
 
     def test(self, data_path=None):
+        """Test on test chunk of training data
+        returns average test loss, saves trues and predictions to folder input_pred_true
         """
-        data can be path to dataset or numpy array. If unspecified tests on test chunk of training data
-        returns average test loss, saves trues and predictions to folder input_true_pred
-        """
+        old_data_path = self.args.data_path
+        if data_path is not None:
+            self.args.data_path = data_path
 
+        test_data, test_loader = self._get_data(flag='test')
+
+        preds = []
+        trues = []
+        inputs = []
+
+        folder_path = './test_results/' + self.args.model_name + '/'
+        os.makedirs(folder_path, exist_ok=True)
+
+        self.model.eval()
+        with (torch.no_grad()):
+            for i, (batch_x, batch_y) in enumerate(test_loader):
+                batch_x = batch_x.float().to(self.device)
+                batch_y = batch_y.float().to(self.device)
+
+                outputs = self.model(batch_x)
+
+                f_dim = -1 if self.args.features == 'MS' else 0
+                pred = outputs[:, -self.args.pred_len:, f_dim:].detach().cpu().numpy()
+                true = batch_y[:, -self.args.pred_len:, f_dim:].detach().cpu().numpy() # removed .to(self.device)
+
+                preds.append(pred)
+                trues.append(true)
+                inputs.append(batch_x.detach().cpu().numpy())
+
+        preds = np.array(preds)
+        trues = np.array(trues)
+        inputs = np.array(inputs)
+
+        trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
+        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
+        inputs = inputs.reshape(-1, inputs.shape[-2], inputs.shape[-1])
+
+        output_path = folder_path + '/input_pred_true/'
+        os.makedirs(output_path, exist_ok=True)
+
+        np.save(output_path + 'input.npy', inputs)
+        np.save(output_path + 'pred.npy', preds)
+        np.save(output_path + 'true.npy', trues)
+
+        write_to_metrics_csv(
+            preds=preds,
+            trues=trues,
+            model_name=self.args.model_name,
+            dataset=self.args.data_path,
+            folder_path=folder_path
+        )
+
+
+        self.args.data_path = old_data_path
+
+    def test_on_new_data(self, data_path):
+        """use this to test on dataset that was not in training"""
+        old_path = self.args.data_path
+        self.args.data_path = data_path
+
+
+
+
+        self.args.data_path = old_path
         pass
 
     def predict(self):
         pass
-
