@@ -338,12 +338,15 @@ class SimpleExp(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         inputs = inputs.reshape(-1, inputs.shape[-2], inputs.shape[-1])
 
-        output_path = self.test_results_path + '/input_pred_true/'
+        filename = os.path.basename(self.args.data_path)
+        data_name, suffix = os.path.splitext(filename)
+
+        output_path = os.path.join(self.test_results_path, 'input_pred_true/', data_name)
         os.makedirs(output_path, exist_ok=True)
 
-        np.save(output_path + 'input.npy', inputs)
-        np.save(output_path + 'pred.npy', preds)
-        np.save(output_path + 'true.npy', trues)
+        np.save(output_path + '/input.npy', inputs)
+        np.save(output_path + '/pred.npy', preds)
+        np.save(output_path + '/true.npy', trues)
 
         write_to_metrics_csv(
             preds=preds,
@@ -356,35 +359,39 @@ class SimpleExp(Exp_Basic):
         self.args.data_path = old_data_path
 
     def plot_preds(self, nbr_plots=3, show=True):
-        import numpy as np
         from matplotlib import pyplot as plt
 
-        preds = np.load(self.test_results_path + '/input_pred_true/pred.npy')
-        trues = np.load(self.test_results_path + '/input_pred_true/true.npy')
-        inputs = np.load(self.test_results_path + '/input_pred_true/input.npy')
+        output_path = os.path.join(self.test_results_path, 'input_pred_true')
+        for folder_name in os.listdir(output_path):
+            current_dir = os.path.join(output_path, folder_name)
+            preds = np.load(current_dir + '/pred.npy')
+            trues = np.load(current_dir + '/true.npy')
+            inputs = np.load(current_dir + '/input.npy')
 
-        plot_path = os.path.join(self.test_results_path, 'plots/')
-        os.makedirs(plot_path, exist_ok=True)
+            plot_path = os.path.join(self.test_results_path, 'plots/')
+            os.makedirs(plot_path, exist_ok=True)
 
-        interval = trues.shape[0] // nbr_plots
-        for i in range(nbr_plots):
-            for j, col in zip(range(preds.shape[2]), self.data_provider.get_cols()):
-                idx = i * interval
-                print(f'channel {j}: {col}, position: {idx}')
+            interval = trues.shape[0] // nbr_plots
+            for i in range(nbr_plots):
+                for j, col in zip(range(preds.shape[2]), self.data_provider.get_cols()):
+                    idx = i * interval
+                    print(f'channel {j}: {col}, position: {idx}')
 
-                y = trues[idx, :, j]
-                yhat = preds[idx, :, j]
-                x = inputs[idx, :, j]
+                    y = trues[idx, :, j]
+                    yhat = preds[idx, :, j]
+                    x = inputs[idx, :, j]
 
-                plt.figure()
-                plt.plot(x, label='input')
-                plt.plot(range(len(x), len(x) + len(y)), y, label='true', alpha=0.5)
-                plt.plot(range(len(x), len(x) + len(y)), yhat, label='pred')
-                plt.title(f'Predictions and true values for variable {col}')
-                plt.legend()
-                plt.savefig(os.path.join(plot_path, f'channel-{col}_batch-{j}.pdf'), format='pdf')
-                if show:
-                    plt.show()
+                    plt.figure()
+                    plt.plot(x, label='input')
+                    plt.plot(range(len(x), len(x) + len(y)), y, label='true', alpha=0.5)
+                    plt.plot(range(len(x), len(x) + len(y)), yhat, label='pred')
+                    plt.title(f'Predictions for variable: {col}, data: {folder_name}')
+                    plt.legend()
+                    plt.savefig(
+                        os.path.join(plot_path, f'data-{folder_name}_channel-{col}_batch-{j}.pdf'),
+                        format='pdf')
+                    if show:
+                        plt.show()
 
     def test_on_new_data(self, data_path):
         """use this to test on dataset that was not in training"""
