@@ -356,7 +356,7 @@ class SimpleExp(Exp_Basic):
             trues=trues,
             model_name=self.args.model_name,
             dataset=self.args.data_path,
-            folder_path=self.test_results_path
+            folder_path='./test_results/',
         )
 
         self.args.data_path = old_data_path
@@ -402,6 +402,17 @@ class SimpleExp(Exp_Basic):
 
         self.args.data_path = old_path
         pass
+
+    def change_model_name(self, new_name):
+        self.args.model_name = new_name
+        self.save_path = os.path.join(
+            self.args.checkpoints,
+            self.args.model_name,
+        )
+        self.test_results_path = os.path.join(
+            './test_results/',
+            self.args.model_name
+        )
 
     def predict(self):
         pass
