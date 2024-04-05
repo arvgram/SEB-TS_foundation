@@ -12,7 +12,7 @@ checkpoints: ./checkpoints # where to store model weights
 model_name: PTST_test
 
 # target:
-features: S # S = univariate, M = multivariate, MS = multi predict uni
+features: M # S = univariate, M = multivariate, MS = multi predict uni
 target: signal_1 # name of target column in data if MS
 
 # modelling:
@@ -55,7 +55,7 @@ lr_scheduler: one_cycle_lr # currently the only supported
 lr_pct_start: 0.1 # what percent of max learning rate
 loss: MSE # currently supports MSE, L1/MAE
 
-training_task: self_supervised
+training_task: supervised
 mask_pct: 0.4
 
 patience: 15

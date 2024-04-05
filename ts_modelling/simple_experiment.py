@@ -139,6 +139,8 @@ class SimpleExp(Exp_Basic):
         self.model = self._swap_head(model=self.model, new_head=new_head)
 
     def _swap_head(self, model, new_head):
+        """Changes head on model to type corresponding to new_head """
+
         if new_head == 'supervised':
             model.model.head = Flatten_Head(
                 individual=self.args.individual,
@@ -165,14 +167,14 @@ class SimpleExp(Exp_Basic):
         if n_epochs is None:
             n_epochs = self.args.train_epochs
 
-        if self.args.verbose:
-            total_params = sum(p.numel() for p in self.model.parameters())
-            trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-            print(f'Trainable parameters:\t{trainable_params}')
-            print(f'Total parameters:\t\t{total_params}')
+        total_params = sum(p.numel() for p in self.model.parameters())
+        trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        print(f"{'Trainable parameters:': <{21}}{trainable_params:>12}")
+        print(f"{'Total parameters:': <{21}}{total_params:>12}")
 
         tot_time_start = time.time()
 
+        print(f'Training on data: {self.args.data_path}')
         train_data, train_loader = self._get_data(flag='train')
         val_data, val_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
@@ -213,7 +215,7 @@ class SimpleExp(Exp_Basic):
 
                 train_loss.append(loss.item())
 
-                if (i + 1) % self.args.batch_log_interval == 0:
+                if (i + 1) % self.args.batch_log_interval == 0 and (epoch + 1) % self.args.epoch_log_interval == 0:
                     print(f'train batch: {i + 1} | Loss: {loss.item():.7f}')
 
                 loss.backward()
