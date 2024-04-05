@@ -86,9 +86,6 @@ class SimpleExp(Exp_Basic):
             pred = outputs[:, -self.args.pred_len:, f_dim:]
             true = batch_y[:, -self.args.pred_len:, f_dim:]
 
-            pred = pred.detach().numpy()
-            true = pred.detach().numpy()
-
             loss = criterion(pred, true)
 
         elif task == 'self_supervised':
@@ -115,8 +112,8 @@ class SimpleExp(Exp_Basic):
             masked_outputs = outputs * mask_indices_mtx
             trues = batch_x * mask_indices_mtx
 
-            masked_outputs = masked_outputs.detach().cpu()
-            trues = trues.detach().cpu()
+            masked_outputs = masked_outputs.to(self.device)
+            trues = trues.to(self.device)
 
             loss = criterion(masked_outputs, trues)
 
@@ -275,7 +272,7 @@ class SimpleExp(Exp_Basic):
                     task=self.args.training_task
                 )
 
-                total_loss.append(loss)
+                total_loss.append(loss.item())
 
         self.model.train()
         return np.average(total_loss)
