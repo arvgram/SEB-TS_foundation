@@ -250,7 +250,6 @@ class SimpleExp(Exp_Basic):
         seconds = total_training_time % 60
 
         print(f'Total training time: {int(minutes)} minutes {seconds} seconds')
-        return self.model
 
     def validate(self, val_loader, criterion):
         total_loss = []
