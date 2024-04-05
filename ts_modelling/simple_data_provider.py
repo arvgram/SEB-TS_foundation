@@ -35,8 +35,12 @@ class SimpleDataset(Dataset):
             cols = df_raw.columns.tolist()
             if 'date' in cols:
                 cols.remove('date')
-            cols.remove(self.target)
-            cols_of_interest = [cols + [self.target]]
+            if self.features == 'MS':
+                cols.remove(self.target)
+                cols_of_interest = [cols + [self.target]]
+            else:
+                cols_of_interest = cols
+
 
         num_train = int(len(df_raw) * self.train_share)
         num_test = int(len(df_raw) * self.test_share)
@@ -47,6 +51,7 @@ class SimpleDataset(Dataset):
         left_border = left_border_idx[self.set_type]
         right_border = right_border_idx[self.set_type]
 
+        self.cols = cols_of_interest
         self.data_x = df_raw.loc[left_border:right_border, cols_of_interest].values
         self.data_y = df_raw.loc[left_border:right_border, cols_of_interest].values
 
@@ -93,6 +98,9 @@ class SimpleDataProvider:
             num_workers=args.num_workers,
             drop_last=drop_last
         )
+
+    def get_cols(self):
+        return self.dataset.cols
 
     def get_dataset_data_loader(self):
         return self.dataset, self.data_loader

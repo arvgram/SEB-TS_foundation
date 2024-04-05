@@ -93,12 +93,12 @@ class DataProducer:
 
         self.df = df
 
-    def generate_csv(self, file_name='custom.csv'):
+    def generate_csv(self, data_path='custom.csv'):
         if self.df is None:
             self.create_df()
 
         os.makedirs(self.path, exist_ok=True)
-        data_path = os.path.join(self.path, file_name)
+        data_path = os.path.join(self.path, data_path)
         self.df.to_csv(data_path, index=False)
 
     def plot_data(self, ):

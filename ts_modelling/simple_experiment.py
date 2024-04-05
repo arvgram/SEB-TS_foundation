@@ -28,11 +28,15 @@ class SimpleExp(Exp_Basic):
             self.args.checkpoints,
             self.args.model_name,
         )
+        self.test_results_path = os.path.join(
+            './test_results/',
+            self.args.model_name
+        )
 
     def _get_data(self, flag):
         # data_set, data_loader = data_provider(self.args, flag)  # todo: make own simpler dataloader, w/o freqenc etc
-        data_provider = SimpleDataProvider(self.args, flag)
-        data_set, data_loader = data_provider.get_dataset_data_loader()
+        self.data_provider = SimpleDataProvider(self.args, flag)
+        data_set, data_loader = self.data_provider.get_dataset_data_loader()
         return data_set, data_loader
 
     def _select_optimizer(self):  # function that is not required right now but if we want to add flexibility
@@ -307,8 +311,7 @@ class SimpleExp(Exp_Basic):
         trues = []
         inputs = []
 
-        folder_path = './test_results/' + self.args.model_name + '/'
-        os.makedirs(folder_path, exist_ok=True)
+        os.makedirs(self.test_results_path, exist_ok=True)
 
         self.model.eval()
         with (torch.no_grad()):
@@ -320,7 +323,7 @@ class SimpleExp(Exp_Basic):
 
                 f_dim = -1 if self.args.features == 'MS' else 0
                 pred = outputs[:, -self.args.pred_len:, f_dim:].detach().cpu().numpy()
-                true = batch_y[:, -self.args.pred_len:, f_dim:].detach().cpu().numpy() # removed .to(self.device)
+                true = batch_y[:, -self.args.pred_len:, f_dim:].detach().cpu().numpy()  # removed .to(self.device)
 
                 preds.append(pred)
                 trues.append(true)
@@ -334,7 +337,7 @@ class SimpleExp(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         inputs = inputs.reshape(-1, inputs.shape[-2], inputs.shape[-1])
 
-        output_path = folder_path + '/input_pred_true/'
+        output_path = self.test_results_path + '/input_pred_true/'
         os.makedirs(output_path, exist_ok=True)
 
         np.save(output_path + 'input.npy', inputs)
@@ -346,19 +349,45 @@ class SimpleExp(Exp_Basic):
             trues=trues,
             model_name=self.args.model_name,
             dataset=self.args.data_path,
-            folder_path=folder_path
+            folder_path=self.test_results_path
         )
 
-
         self.args.data_path = old_data_path
+
+    def plot_preds(self, nbr_plots=3, show=True):
+        import numpy as np
+        from matplotlib import pyplot as plt
+
+        preds = np.load(self.test_results_path + '/input_pred_true/pred.npy')
+        trues = np.load(self.test_results_path + '/input_pred_true/true.npy')
+        inputs = np.load(self.test_results_path + '/input_pred_true/input.npy')
+
+        plot_path = os.path.join(self.test_results_path, 'plots/')
+        os.makedirs(plot_path, exist_ok=True)
+
+        interval = trues.shape[0] // nbr_plots
+        for i in range(nbr_plots):
+            for j, col in zip(range(preds.shape[2]), self.data_provider.get_cols()):
+                idx = i * interval
+                print(f'channel {j}: {col}, position: {idx}')
+
+                y = trues[idx, :, j]
+                yhat = preds[idx, :, j]
+                x = inputs[idx, :, j]
+
+                plt.figure()
+                plt.plot(x, label='input')
+                plt.plot(range(len(x), len(x) + len(y)), y, label='true', alpha=0.5)
+                plt.plot(range(len(x), len(x) + len(y)), yhat, label='pred')
+                plt.title(f'Predictions and true values for variable {col}')
+                plt.legend()
+                plt.savefig(os.path.join(plot_path, f'channel-{col}_batch-{j}.pdf'), format='pdf')
+                if show:
+                    plt.show()
 
     def test_on_new_data(self, data_path):
         """use this to test on dataset that was not in training"""
         old_path = self.args.data_path
-        self.args.data_path = data_path
-
-
-
 
         self.args.data_path = old_path
         pass
