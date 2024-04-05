@@ -152,14 +152,14 @@ class SimpleExp(Exp_Basic):
                 nf=self.args.d_model * (self.num_patches + 1),
                 target_window=self.args.pred_len,
                 head_dropout=self.args.head_dropout
-            )
+            ).to(self.device)
 
         elif new_head == 'self_supervised':
             model.model.head = PretrainHead(
                 d_model=self.args.d_model,
                 patch_len=self.args.patch_len,
                 dropout=self.args.dropout
-            )
+            ).to(self.device)
 
         return model
 
@@ -204,7 +204,6 @@ class SimpleExp(Exp_Basic):
             for i, (batch_x, batch_y) in enumerate(train_loader):
                 optimiser.zero_grad()
                 batch_x, batch_y = batch_x.float().to(self.device), batch_y.float().to(self.device)
-
                 # supervised training outputs = [bs x nvars x pred_len] forward prediction
                 # self supervised outputs = [bs x nvars x seq_len]
 
