@@ -85,6 +85,10 @@ class SimpleExp(Exp_Basic):
             f_dim = -1 if self.args.features == 'MS' else 0
             pred = outputs[:, -self.args.pred_len:, f_dim:]
             true = batch_y[:, -self.args.pred_len:, f_dim:]
+
+            pred = pred.detach().numpy()
+            true = pred.detach().numpy()
+
             loss = criterion(pred, true)
 
         elif task == 'self_supervised':
@@ -110,6 +114,9 @@ class SimpleExp(Exp_Basic):
             outputs = model(batch_x * ~mask_indices_mtx)
             masked_outputs = outputs * mask_indices_mtx
             trues = batch_x * mask_indices_mtx
+
+            masked_outputs = masked_outputs.detach().cpu()
+            trues = trues.detach().cpu()
 
             loss = criterion(masked_outputs, trues)
 
