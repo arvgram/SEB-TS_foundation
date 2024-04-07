@@ -1,13 +1,23 @@
 # device:
-use_gpu: 0
+use_gpu: 1
 use_multi_gpu: 0
 gpu: 0
 num_workers: 0
 
 # data & directories
-data: custom
 root_path: ./data
 data_path: custom.csv
+
+# data and number of epochs for different training tasks
+pretrain_data:
+  odd_sine: 1
+train_head_data:
+  odd_sine: 1
+finetune_data:
+  odd_sine: 1
+test_data:
+  even_sine
+
 checkpoints: ./checkpoints # where to store model weights
 model_name: PTST_train_even_test_odd
 
@@ -17,26 +27,24 @@ target: signal_1 # name of target column in data if MS
 
 # modelling:
 model: PatchTST
-pred_len: 192
-seq_len: 336 # lookback window
+pred_len: 96 # 192
+seq_len: 168 # 336 # lookback window
 enc_in: 1
-
 # model params:
 # dims:
-e_layers: 3 # number of stacked encoders
-n_heads: 4
-d_model: 128 # latent space dim
-d_ff: 128 # feed forward network
+e_layers: 1 # 8 # number of stacked encoders
+n_heads:  3 # 16
+d_model: 12 # 128 # latent space dim
+d_ff:  12 #256 # feed forward network
 
 # patching
 patch_len: 12
 stride: 12
 padding_patch: end
-label_len: 48
 
 # dropout
-dropout: 0.3 # dropout in W_P embed layer (before encoder)
-fc_dropout: 0.3 # dropout in pretrain head
+dropout: 0.2 # dropout in W_P embed layer (before encoder)
+fc_dropout: 0.2 # dropout in pretrain head
 head_dropout: 0.2
 
 # normalisation
@@ -60,14 +68,11 @@ mask_pct: 0.4
 
 patience: 15
 train_epochs: 30
-finetune_epochs: 1
-pretrain_epochs: 1
-train_head_epochs: 1
 batch_size: 32
 
 
 # communication
-verbose: true # if true then it will print early stopping and learning rate status
+verbose: false # if true then it will print early stopping and learning rate status
 batch_log_interval: 100 # the number of batches between status print
 epoch_log_interval: 10 # the number of epochs between status print
 

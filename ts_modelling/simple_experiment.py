@@ -276,30 +276,66 @@ class SimpleExp(Exp_Basic):
         self.model.train()
         return np.average(total_loss)
 
-    def pretrain_model(self, n_epochs=None, task='self_supervised'):
+    def pretrain_model(self, n_epochs=None, data=None, task='self_supervised'):
         """If needed attaches pretrain head and trains on self_supervised setting"""
-        if n_epochs is None:
-            n_epochs = self.args.pretrain_epochs
+        # data is string w/ path to pretrain data, else data_path and n_epochs are retrieved
+        # from a dict in args
+        if data is not None:
+            data_dict = {data: n_epochs or 5}
+        else:
+            data_dict = self.args.pretrain_data
+
         if not isinstance(self.model.model.head, PretrainHead):
             self.swap_head(new_head=task)
-        self.train(n_epochs=n_epochs)
+        old_data = self.args.data_path
+        self.args.training_task = task
+        for data_key in data_dict:
+            self.args.data_path = data_key
+            self.train(n_epochs=data_dict[data_key])
+        self.args.data_path = old_data
 
-    def train_predict_head(self, n_epochs=None, task='supervised'):
+    def train_predict_head(self, n_epochs=None, data=None, task='supervised'):
         """if needed attaches prediction head and trains only head with frozen backbone"""
-        if n_epochs is None:
-            n_epochs = self.args.train_head_epochs
+
+        # data is string w/ path to pretrain data or data_path and n_epochs are retrieved
+        # from a dict in args
+        if data is not None:
+            data_dict = {data: n_epochs or 5}
+        else:
+            data_dict = self.args.train_head_data
         if not isinstance(self.model.model.head, Flatten_Head):
             self.swap_head(new_head=task)
+
+        old_data = self.args.data_path
         self.args.training_task = 'supervised'
         self.freeze_backbone(freeze=True)
-        self.train(n_epochs=n_epochs)
 
-    def finetune_model(self, n_epochs=None):
+        for data_key in data_dict:
+            self.args.data_path = data_key
+            self.train(n_epochs=data_dict[data_key])
+
+        self.args.data_path = old_data
+
+    def finetune_model(self, n_epochs=None, data=None, task='supervised'):
         """unfreezes all parameters and trains"""
-        if n_epochs is None:
-            n_epochs = self.args.finetune_epochs
+        # data is string w/ path to pretrain data or data_path and n_epochs are retrieved
+        # from a dict in args
+        if data is not None:
+            data_dict = {data: n_epochs or 5}
+        else:
+            data_dict = self.args.finetune_data
+        if not isinstance(self.model.model.head, Flatten_Head):
+            self.swap_head(new_head=task)
+
+        old_data = self.args.data_path
+        self.args.training_task = 'supervised'
         self.freeze_backbone(freeze=False)
-        self.train(n_epochs=n_epochs)
+
+        for data_key in data_dict:
+            self.args.data_path = data_key
+            self.train(n_epochs=data_dict[data_key])
+
+        self.args.data_path = old_data
 
     def test(self, data_path=None):
         """Test on test chunk of training data
@@ -308,6 +344,8 @@ class SimpleExp(Exp_Basic):
         old_data_path = self.args.data_path
         if data_path is not None:
             self.args.data_path = data_path
+        else:
+            self.args.data_path = self.args.test_data
 
         test_data, test_loader = self._get_data(flag='test')
 
@@ -355,7 +393,10 @@ class SimpleExp(Exp_Basic):
             preds=preds,
             trues=trues,
             model_name=self.args.model_name,
-            dataset=self.args.data_path,
+            pretrain_data=self.args.pretrain_data,
+            finetune_data=self.args.finetune_data,
+            train_head_data=self.args.train_head_data,
+            test_data=self.args.test_data,
             folder_path='./test_results/',
         )
 
@@ -364,21 +405,24 @@ class SimpleExp(Exp_Basic):
     def plot_preds(self, nbr_plots=3, show=True):
         from matplotlib import pyplot as plt
 
+        # output path is where the test predictions are located
         output_path = os.path.join(self.test_results_path, 'input_pred_true')
+        plot_path = os.path.join(self.test_results_path, 'plots/')
+        os.makedirs(plot_path, exist_ok=True)
+
         for folder_name in os.listdir(output_path):
             current_dir = os.path.join(output_path, folder_name)
             preds = np.load(current_dir + '/pred.npy')
             trues = np.load(current_dir + '/true.npy')
             inputs = np.load(current_dir + '/input.npy')
 
-            plot_path = os.path.join(self.test_results_path, 'plots/')
-            os.makedirs(plot_path, exist_ok=True)
+            current_plot_path = os.path.join(plot_path, folder_name)
+            os.makedirs(current_plot_path, exist_ok=True)
 
             interval = trues.shape[0] // nbr_plots
             for i in range(nbr_plots):
                 for j, col in zip(range(preds.shape[2]), self.data_provider.get_cols()):
                     idx = i * interval
-                    print(f'channel {j}: {col}, position: {idx}')
 
                     y = trues[idx, :, j]
                     yhat = preds[idx, :, j]
@@ -391,10 +435,11 @@ class SimpleExp(Exp_Basic):
                     plt.title(f'Predictions for variable: {col}, data: {folder_name}')
                     plt.legend()
                     plt.savefig(
-                        os.path.join(plot_path, f'data-{folder_name}_channel-{col}_batch-{j}.pdf'),
+                        os.path.join(current_plot_path, f'data-{folder_name}_channel-{col}_batch-{j}.pdf'),
                         format='pdf')
                     if show:
                         plt.show()
+                    plt.close()
 
     def test_on_new_data(self, data_path):
         """use this to test on dataset that was not in training"""
