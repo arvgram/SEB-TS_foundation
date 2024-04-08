@@ -27,15 +27,15 @@ target: signal_1 # name of target column in data if MS
 
 # modelling:
 model: PatchTST
-pred_len: 96 # 192
-seq_len: 168 # 336 # lookback window
+pred_len: 192
+seq_len: 336 # lookback window
 enc_in: 1
 # model params:
 # dims:
-e_layers: 1 # 8 # number of stacked encoders
-n_heads:  3 # 16
-d_model: 12 # 128 # latent space dim
-d_ff:  12 #256 # feed forward network
+e_layers: 5 # number of stacked encoders
+n_heads: 16
+d_model: 128 # latent space dim
+d_ff: 256 # feed forward network
 
 # patching
 patch_len: 12
@@ -63,25 +63,15 @@ lr_scheduler: one_cycle_lr # currently the only supported
 lr_pct_start: 0.1 # what percent of max learning rate
 loss: MSE # currently supports MSE, L1/MAE
 
-training_task: self_supervised
+training_task: supervised
 mask_pct: 0.4
 
 patience: 15
-train_epochs: 30
+train_epochs: 1
 batch_size: 32
 
 
 # communication
-verbose: false # if true then it will print early stopping and learning rate status
+verbose: true # if true then it will print early stopping and learning rate status
 batch_log_interval: 100 # the number of batches between status print
 epoch_log_interval: 10 # the number of epochs between status print
-
-# unnecessary – these are residuals from dataloader class from FEDformer
-embed: timeF
-embed_type: 0
-freq: h
-
-
-
-
-

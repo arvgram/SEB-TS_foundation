@@ -290,6 +290,8 @@ class SimpleExp(Exp_Basic):
         old_data = self.args.data_path
         self.args.training_task = task
         for data_key in data_dict:
+            if self.args.verbose:
+                print(f'Pretraining: {self.args.model_name} on data: {data_key} for {data_dict[data_key]} epochs')
             self.args.data_path = data_key
             self.train(n_epochs=data_dict[data_key])
         self.args.data_path = old_data
@@ -312,6 +314,8 @@ class SimpleExp(Exp_Basic):
 
         for data_key in data_dict:
             self.args.data_path = data_key
+            if self.args.verbose:
+                print(f'Training pred head: {self.args.model_name} on data: {data_key} for {data_dict[data_key]} epochs')
             self.train(n_epochs=data_dict[data_key])
 
         self.args.data_path = old_data
@@ -320,6 +324,7 @@ class SimpleExp(Exp_Basic):
         """unfreezes all parameters and trains"""
         # data is string w/ path to pretrain data or data_path and n_epochs are retrieved
         # from a dict in args
+
         if data is not None:
             data_dict = {data: n_epochs or 5}
         else:
@@ -333,6 +338,8 @@ class SimpleExp(Exp_Basic):
 
         for data_key in data_dict:
             self.args.data_path = data_key
+            if self.args.verbose:
+                print(f'Finetuning: {self.args.model_name} on data: {data_key} for {data_dict[data_key]} epochs')
             self.train(n_epochs=data_dict[data_key])
 
         self.args.data_path = old_data
@@ -356,6 +363,9 @@ class SimpleExp(Exp_Basic):
         os.makedirs(self.test_results_path, exist_ok=True)
 
         self.model.eval()
+        if self.args.verbose:
+            print(f'Testing {self.args.model_name} on {self.args.data_path}')
+
         with (torch.no_grad()):
             for i, (batch_x, batch_y) in enumerate(test_loader):
                 batch_x = batch_x.float().to(self.device)
@@ -435,7 +445,7 @@ class SimpleExp(Exp_Basic):
                     plt.title(f'Predictions for variable: {col}, data: {folder_name}')
                     plt.legend()
                     plt.savefig(
-                        os.path.join(current_plot_path, f'data-{folder_name}_channel-{col}_batch-{j}.pdf'),
+                        os.path.join(current_plot_path, f'data-{folder_name}_channel-{col}_batch-{i}.pdf'),
                         format='pdf')
                     if show:
                         plt.show()
