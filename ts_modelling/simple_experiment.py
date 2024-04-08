@@ -52,13 +52,13 @@ class SimpleExp(Exp_Basic):
         criterion = losses[self.args.loss]
         return criterion
 
-    def _select_lr_scheduler(self, optimiser, train_steps):  # allow for others
+    def _select_lr_scheduler(self, optimiser, train_steps, epochs):  # allow for others
         lr_schedulers = {
             'one_cycle_lr': optim.lr_scheduler.OneCycleLR(
                 optimizer=optimiser,
                 steps_per_epoch=train_steps,
                 pct_start=self.args.lr_pct_start or 0.1,
-                epochs=self.args.train_epochs,
+                epochs=epochs,
                 max_lr=self.args.lr
             )
         }
@@ -193,7 +193,7 @@ class SimpleExp(Exp_Basic):
 
         optimiser = self._select_optimizer()
         criterion = self._select_criterion()
-        scheduler = self._select_lr_scheduler(optimiser, train_steps)
+        scheduler = self._select_lr_scheduler(optimiser, train_steps, epochs=n_epochs)
 
         for epoch in range(n_epochs):
             epoch_time_start = time.time()
