@@ -406,7 +406,7 @@ class SimpleExp(Exp_Basic):
             pretrain_data=self.args.pretrain_data,
             finetune_data=self.args.finetune_data,
             train_head_data=self.args.train_head_data,
-            test_data=self.args.test_data,
+            test_data=self.args.data_path,
             folder_path='./test_results/',
         )
 
