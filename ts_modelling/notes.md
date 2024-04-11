@@ -24,11 +24,11 @@ We can later change A and B to other similar datasets
   - Naive, just predict the last value forward. done 
   - "smarter" naive: normalise input using first value in sequence, take last value in sequence and add normalised input. Done
 - Gather datasets:
-  - A: Train: Stockholm
-  - B: Söderhamn
-  - C: Sundsvall
-  - D: Jönköping
-  - E: Lund
+  - A: Train: Stockholm done
+  - B: Söderhamn, (Delsbo instead): done
+  - C: Sundsvall: done
+  - D: Jönköping: done
+  - E: Lund (Malmö instead) done
 
 - Before modelling!! move old metrics.csv
 
