@@ -6,17 +6,17 @@ num_workers: 0
 
 # data & directories
 root_path: ./data
-data_path: custom.csv
+data_path: combination.csv
 
 # data and number of epochs for different training tasks
 pretrain_data:
-  odd_sine: 1
+  custom.csv: 3
 train_head_data:
-  odd_sine: 1
+  custom.csv: 3
 finetune_data:
-  odd_sine: 1
+  custom.csv: 3
 test_data:
-  even_sine
+  test_data.csv
 
 checkpoints: ./checkpoints # where to store model weights
 model_name: PTST_train_even_test_odd
@@ -67,7 +67,7 @@ training_task: supervised
 mask_pct: 0.4
 
 patience: 15
-train_epochs: 1
+train_epochs: 5
 batch_size: 32
 
 

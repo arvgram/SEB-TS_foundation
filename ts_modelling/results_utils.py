@@ -40,7 +40,7 @@ def write_to_metrics_csv(preds, trues, model_name, pretrain_data, train_head_dat
         'rmse': [rmse],
         'mape': [mape],
         'mspe': [mspe],
-        'RSE': [rse],
+        'rse': [rse],
         'nrv': [nrv],
     })
 

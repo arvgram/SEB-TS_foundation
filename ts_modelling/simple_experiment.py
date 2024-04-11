@@ -7,8 +7,13 @@ import torch
 
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
 from PatchTST.PatchTST_supervised.models import PatchTST
+from PatchTST.PatchTST_supervised.models import DLinear
+
 from PatchTST.PatchTST_supervised.utils.tools import EarlyStopping
 from PatchTST.PatchTST_supervised.layers.PatchTST_backbone import Flatten_Head
+
+import naive_predictor
+import pattern_repeating_predictor
 
 from results_utils import write_to_metrics_csv
 from simple_data_provider import SimpleDataProvider
@@ -67,6 +72,9 @@ class SimpleExp(Exp_Basic):
     def _build_model(self):  # allow for other models
         model_dict = {
             'PatchTST': PatchTST,
+            'DLinear': DLinear,
+            'Naive': naive_predictor,
+            'PatternRepeating': pattern_repeating_predictor,
         }
         model = model_dict[self.args.model].Model(self.args).float()
         self.num_patches = int((self.args.seq_len - self.args.patch_len) / self.args.stride + 1)
@@ -168,6 +176,8 @@ class SimpleExp(Exp_Basic):
             param.requires_grad = not freeze
 
     def train(self, n_epochs=None):
+        if n_epochs == 0:
+            return
         if n_epochs is None:
             n_epochs = self.args.train_epochs
 
@@ -281,7 +291,7 @@ class SimpleExp(Exp_Basic):
         # data is string w/ path to pretrain data, else data_path and n_epochs are retrieved
         # from a dict in args
         if data is not None:
-            data_dict = {data: n_epochs or 5}
+            data_dict = {data: n_epochs if n_epochs is not None else 3}
         else:
             data_dict = self.args.pretrain_data
 
@@ -302,7 +312,7 @@ class SimpleExp(Exp_Basic):
         # data is string w/ path to pretrain data or data_path and n_epochs are retrieved
         # from a dict in args
         if data is not None:
-            data_dict = {data: n_epochs or 5}
+            data_dict = {data: n_epochs if n_epochs is not None else 3}
         else:
             data_dict = self.args.train_head_data
         if not isinstance(self.model.model.head, Flatten_Head):
@@ -326,7 +336,7 @@ class SimpleExp(Exp_Basic):
         # from a dict in args
 
         if data is not None:
-            data_dict = {data: n_epochs or 5}
+            data_dict = {data: n_epochs if n_epochs is not None else 3}
         else:
             data_dict = self.args.finetune_data
         if not isinstance(self.model.model.head, Flatten_Head):

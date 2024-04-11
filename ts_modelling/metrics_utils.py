@@ -38,6 +38,6 @@ def metrics(pred, true):
     mape = _mape(pred, true)
     mspe = _mspe(pred, true)
     rse = _rse(pred, true)
-    nrv = norm_res_var()
+    nrv = norm_res_var(pred, true)
 
     return mae, mse, rmse, mape, mspe, rse, nrv
