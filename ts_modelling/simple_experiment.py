@@ -12,12 +12,13 @@ from PatchTST.PatchTST_supervised.models import DLinear
 from PatchTST.PatchTST_supervised.utils.tools import EarlyStopping
 from PatchTST.PatchTST_supervised.layers.PatchTST_backbone import Flatten_Head
 
-import naive_predictor
-import pattern_repeating_predictor
+from models import naive_predictor
+from models import pattern_repeating_predictor
+from models import daily_repeating_predictor
 
-from results_utils import write_to_metrics_csv
+from utils.results_utils import write_to_metrics_csv
 from simple_data_provider import SimpleDataProvider
-from model_components import PretrainHead
+from models.model_components import PretrainHead
 
 from torch import optim
 from torch import nn
@@ -75,15 +76,13 @@ class SimpleExp(Exp_Basic):
             'DLinear': DLinear,
             'Naive': naive_predictor,
             'PatternRepeating': pattern_repeating_predictor,
+            'DailyRepeating': daily_repeating_predictor,
         }
         model = model_dict[self.args.model].Model(self.args).float()
         self.num_patches = int((self.args.seq_len - self.args.patch_len) / self.args.stride + 1)
 
-        if self.args.training_task == 'self_supervised':
+        if self.args.training_task == 'self_supervised' and self.args.model == 'PatchTST':
             model = self._swap_head(model=model, new_head='self_supervised')
-            print('self_supervised head')
-        elif self.args.training_task == 'supervised':
-            print('supervised head')
         return model
 
     def infer_and_get_loss(self, batch_x, batch_y, model, criterion, task):

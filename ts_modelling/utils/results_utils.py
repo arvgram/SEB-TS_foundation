@@ -28,7 +28,7 @@ def write_to_metrics_csv(preds, trues, model_name, pretrain_data, train_head_dat
     test_data_name = os.path.basename(test_data)
     test_data_name, suffix = os.path.splitext(test_data_name)
 
-    mae, mse, rmse, mape, mspe, rse, nrv = metrics(preds, trues)  
+    mae, mse, rmse, mape, mspe, rse, nrv = metrics(preds, trues)
     metrics_df = pd.DataFrame({
         'model_name': [model_name],
         'pretrain_data': [pt_data_name],
