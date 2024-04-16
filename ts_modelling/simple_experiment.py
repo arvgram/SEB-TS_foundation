@@ -30,6 +30,9 @@ class SimpleExp(Exp_Basic):
 
     def __init__(self, args):
         super(SimpleExp, self).__init__(args)  # sets the device (GPU/CPU)
+        self.last_lr = None
+        self.best_score = None
+        self.val_loss_min = np.Inf
         self.save_path = os.path.join(
             self.args.checkpoints,
             self.args.model_name,
@@ -148,6 +151,8 @@ class SimpleExp(Exp_Basic):
         """Changes head on model to type corresponding to new_head
         """
         self.model = self._swap_head(model=self.model, new_head=new_head)
+        self.val_loss_min = np.Inf
+        self.best_score = None
 
     def _swap_head(self, model, new_head):
         """Changes head on model to type corresponding to new_head """
@@ -199,6 +204,8 @@ class SimpleExp(Exp_Basic):
             patience=self.args.patience,
             verbose=self.args.verbose,
         )
+        early_stopping.val_loss_min = self.val_loss_min
+        early_stopping.best_score = self.best_score
 
         optimiser = self._select_optimizer()
         criterion = self._select_criterion()
@@ -249,14 +256,16 @@ class SimpleExp(Exp_Basic):
                     f'epoch time: {time.time() - epoch_time_start}'
                 )
             early_stopping(val_loss=val_loss, model=self.model, path=self.save_path)
+            self.last_lr = scheduler.get_last_lr()[0]
             if early_stopping.early_stop:
                 print('Early stopping')
                 break
             if self.args.verbose:
-                print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
+                print(f'Updating learning rate to {self.last_lr}')
 
         self.model.load_state_dict(torch.load(os.path.join(self.save_path, 'checkpoint.pth')))
-
+        self.val_loss_min = early_stopping.val_loss_min
+        self.best_score = early_stopping.best_score
         total_training_time = time.time() - tot_time_start
         minutes = total_training_time // 60
         seconds = total_training_time % 60
@@ -301,7 +310,7 @@ class SimpleExp(Exp_Basic):
         for data_key in data_dict:
             if self.args.verbose:
                 print(f'Pretraining: {self.args.model_name} on data: {data_key} for {data_dict[data_key]} epochs')
-            self.args.data_path = data_key
+            self.swap_train_data(data_key)
             self.train(n_epochs=data_dict[data_key])
         self.args.data_path = old_data
 
@@ -459,6 +468,11 @@ class SimpleExp(Exp_Basic):
                     if show:
                         plt.show()
                     plt.close()
+
+    def swap_train_data(self, new_data_path):
+        self.args.data_path = new_data_path
+        self.best_score = None
+        self.val_loss_min = np.Inf
 
     def test_on_new_data(self, data_path):
         """use this to test on dataset that was not in training"""

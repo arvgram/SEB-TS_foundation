@@ -18,11 +18,11 @@ def _rmse(pred, true):
 
 
 def _mape(pred, true):
-    return np.mean(np.abs((pred - true) / true+1e-7))
+    return np.mean(np.abs((pred - true) / (true+1e-5)))
 
 
 def _mspe(pred, true):
-    return np.mean(np.square((pred - true) / true+1e-7))
+    return np.mean(np.square((pred - true) / (true+1e-5)))
 
 
 def norm_res_var(preds, trues):
