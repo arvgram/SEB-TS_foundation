@@ -495,6 +495,7 @@ class SimpleExp(Exp_Basic):
             './test_results/',
             self.args.model_name
         )
+        os.makedirs(self.save_path, exist_ok=True)
         torch.save(self.model.state_dict(), self.save_path + '/' + 'checkpoint.pth')
 
     def predict(self):
