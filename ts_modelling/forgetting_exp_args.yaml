@@ -75,3 +75,5 @@ batch_size: 32
 verbose: true # if true then it will print early stopping and learning rate status
 batch_log_interval: 100 # the number of batches between status print
 epoch_log_interval: 5 # the number of epochs between status print
+
+early_batch_break: 0.2
