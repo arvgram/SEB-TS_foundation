@@ -130,7 +130,8 @@ class SimpleExp(Exp_Basic):
         return loss
 
     def load_model(self, model_path=None):
-        head = self.model.model.head
+        if isinstance(self.model, PatchTST.Model):
+            head = self.model.model.head
         if model_path is None:
             if os.path.exists(self.save_path + '/supervised'):
                 if not isinstance(head, Flatten_Head):
@@ -240,6 +241,9 @@ class SimpleExp(Exp_Basic):
                 loss.backward()
                 optimiser.step()
                 scheduler.step()
+
+                if i / train_steps > self.args.early_batch_break:
+                    break
 
             train_loss = np.average(train_loss)
             val_loss = self.validate(val_loader, criterion)
