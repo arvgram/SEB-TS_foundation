@@ -495,6 +495,7 @@ class SimpleExp(Exp_Basic):
             './test_results/',
             self.args.model_name
         )
+        torch.save(self.model.state_dict(), self.save_path + '/' + 'checkpoint.pth')
 
     def predict(self):
         pass
