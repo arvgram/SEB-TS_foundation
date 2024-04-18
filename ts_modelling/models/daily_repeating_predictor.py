@@ -10,7 +10,7 @@ class Model(nn.Module):
 
     def forward(self, x):
         # x: [Batch, Input length, Channel]
-        normalized_input = x - x[:, :1, :]
+        normalized_input = x - x[:, -25:-24, :]
         last_day = normalized_input[:, -24:, :]
         last_values = x[:, -1:, :]
         repeated = last_day.repeat(1, int(self.pred_len/24)+1, 1)
