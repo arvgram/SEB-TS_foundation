@@ -8,6 +8,8 @@ import torch
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
 from PatchTST.PatchTST_supervised.models import PatchTST
 from PatchTST.PatchTST_supervised.models import DLinear
+from PatchTST.PatchTST_supervised.models import Linear
+from PatchTST.PatchTST_supervised.models import NLinear
 
 from PatchTST.PatchTST_supervised.utils.tools import EarlyStopping
 from PatchTST.PatchTST_supervised.layers.PatchTST_backbone import Flatten_Head
@@ -76,6 +78,8 @@ class SimpleExp(Exp_Basic):
     def _build_model(self):  # allow for other models
         model_dict = {
             'PatchTST': PatchTST,
+            'Linear': Linear,
+            'NLinear': NLinear,
             'DLinear': DLinear,
             'Naive': naive_predictor,
             'PatternRepeating': pattern_repeating_predictor,
