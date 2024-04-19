@@ -370,7 +370,7 @@ class SimpleExp(Exp_Basic):
 
         self.args.data_path = old_data
 
-    def test(self, data_path=None):
+    def test(self, data_path=None, target=None):
         """Test on test chunk of training data
         returns average test loss, saves trues and predictions to folder input_pred_true
         """
@@ -379,7 +379,9 @@ class SimpleExp(Exp_Basic):
             self.args.data_path = data_path
         else:
             self.args.data_path = self.args.test_data
-
+        if target is not None:
+            self.args.target = target
+        
         test_data, test_loader = self._get_data(flag='test')
 
         preds = []
