@@ -381,7 +381,7 @@ class SimpleExp(Exp_Basic):
             self.args.data_path = self.args.test_data
         if target is not None:
             self.args.target = target
-        
+
         test_data, test_loader = self._get_data(flag='test')
 
         preds = []
@@ -479,14 +479,16 @@ class SimpleExp(Exp_Basic):
                         plt.show()
                     plt.close()
 
-    def swap_train_data(self, new_data_path):
+    def swap_train_data(self, new_data_path, new_target=None):
+        if new_target is not None:
+            self.args.target_name = new_target
         if self.args.verbose:
             print(f'Swapping to {new_data_path}')
         self.args.data_path = new_data_path
         val_data, val_loader = self._get_data(flag='val')
         criterion = self._select_criterion()
         val_loss = self.validate(val_loader, criterion)
-        print(f'Initial validator loss on {new_data_path}: {val_loss:.5}')
+        print(f'Initial validation loss on {new_data_path}: {val_loss:.5}')
         self.best_score = -val_loss
         self.val_loss_min = val_loss
 
