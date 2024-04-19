@@ -96,6 +96,19 @@ What will be interesting is if the model can keep track of datasets with differe
 
 
 # Todo:
+- when switching datasets, validate first so that validation loss is compared to out of box performance of new dataset
+
+- Write graphs/tables to populate with the main experiment:
+  - Incremental learning:
+    - datasets = [traffic_small('2'), temp_small, ETTh1, Illness, Exchange]
+    - train an expert model for each dataset, save MSE and NRV
+    - for model in [Patch_small, Patch_norm, Patch_large, Linear, NLinear, DLinear, Naive, daily repeater, full repeater]
+      - learning rate <- 10^-4
+      - for dataset in datasets:
+        - train model on dataset
+        - test on all datasets
+        - learning rate <- 10^-5
+      - test out of the box on unseen data: ETTh2, other temperature, other traffic
 - find a good schema for learning rate when doing pretraining/finetuning
 
 

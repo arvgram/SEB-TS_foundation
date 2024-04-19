@@ -43,7 +43,7 @@ class SimpleExp(Exp_Basic):
         )
 
     def _get_data(self, flag):
-        # data_set, data_loader = data_provider(self.args, flag)  # todo: make own simpler dataloader, w/o freqenc etc
+        # data_set, data_loader = data_provider(self.args, flag)  # todo: make own simpler dataloader, w/o freqenc etc DONE:)
         self.data_provider = SimpleDataProvider(self.args, flag)
         data_set, data_loader = self.data_provider.get_dataset_data_loader()
         return data_set, data_loader
@@ -474,9 +474,15 @@ class SimpleExp(Exp_Basic):
                     plt.close()
 
     def swap_train_data(self, new_data_path):
+        if self.args.verbose:
+            print(f'Swapping to {new_data_path}')
         self.args.data_path = new_data_path
-        self.best_score = None
-        self.val_loss_min = np.Inf
+        val_data, val_loader = self._get_data(flag='val')
+        criterion = self._select_criterion()
+        val_loss = self.validate(val_loader, criterion)
+        print(f'Initial validator loss on {new_data_path}: {val_loss:.5}')
+        self.best_score = -val_loss
+        self.val_loss_min = val_loss
 
     def test_on_new_data(self, data_path):
         """use this to test on dataset that was not in training"""
