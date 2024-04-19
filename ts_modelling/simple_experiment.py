@@ -481,7 +481,7 @@ class SimpleExp(Exp_Basic):
 
     def swap_train_data(self, new_data_path, new_target=None):
         if new_target is not None:
-            self.args.target_name = new_target
+            self.args.target = new_target
         if self.args.verbose:
             print(f'Swapping to {new_data_path}')
         self.args.data_path = new_data_path
