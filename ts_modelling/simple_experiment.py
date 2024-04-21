@@ -430,6 +430,7 @@ class SimpleExp(Exp_Basic):
         write_to_metrics_csv(
             preds=preds,
             trues=trues,
+            model_type=self.args.model,
             model_name=self.args.model_name,
             pretrain_data=self.args.pretrain_data,
             finetune_data=self.args.finetune_data,
@@ -467,6 +468,7 @@ class SimpleExp(Exp_Basic):
                     x = inputs[idx, :, j]
 
                     plt.figure()
+
                     plt.plot(x, label='input')
                     plt.plot(range(len(x), len(x) + len(y)), y, label='true', alpha=0.5)
                     plt.plot(range(len(x), len(x) + len(y)), yhat, label='pred')

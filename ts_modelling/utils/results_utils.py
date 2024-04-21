@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 
-def write_to_metrics_csv(preds, trues, model_name, pretrain_data, train_head_data, finetune_data, test_data, folder_path):
+def write_to_metrics_csv(preds, trues, model_type, model_name, pretrain_data, train_head_data, finetune_data, test_data, folder_path):
     pt_data_name = ''
     for pt_file in pretrain_data:
         pt_filename = os.path.basename(pt_file)
@@ -31,6 +31,7 @@ def write_to_metrics_csv(preds, trues, model_name, pretrain_data, train_head_dat
     mae, mse, rmse, mape, mspe, rse, nrv = metrics(preds, trues)
     metrics_df = pd.DataFrame({
         'model_name': [model_name],
+        'model_type': [model_type],
         'pretrain_data': [pt_data_name],
         'train_head_data': [th_data_name],
         'finetune_data': [ft_data_name],
