@@ -111,7 +111,7 @@ class MultiDataset(Dataset):
                 test_share=test_share
             )
             self.datasets.append(dataset)
-
+        self.cols = [col for d in self.datasets for col in d.cols]
     def __len__(self):
         # length is length of all dataset, using __len__ in SimpleDataset class
         self.total_length = sum(len(dataset) for dataset in self.datasets)
