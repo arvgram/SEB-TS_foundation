@@ -8,7 +8,7 @@ class SimpleDataset(Dataset):
     A simple dataset for use with PyTorch and training time series models. Does not use datetime/frequency features.
     """
 
-    def __init__(self, root_path, data_path, flag, features, target, seq_len, pred_len, train_share=0.7,
+    def __init__(self, root_path, data_path, flag, features, target, seq_len, pred_len, train_share=0.6,
                  test_share=0.2):
         self.path = root_path + '/' + data_path
         self.flag = flag
@@ -41,7 +41,6 @@ class SimpleDataset(Dataset):
             else:
                 cols_of_interest = cols
 
-
         num_train = int(len(df_raw) * self.train_share)
         num_test = int(len(df_raw) * self.test_share)
         num_val = len(df_raw) - num_test - num_train
@@ -70,8 +69,71 @@ class SimpleDataset(Dataset):
         return seq_x, seq_y,
 
 
+class MultiDataset(Dataset):
+    """
+    A dataset for sampling from multiple datasets.
+    Parameters:
+    - root_path: str path to the directory containing datsets
+    - data_paths_target: dict {file_name: target_in_data} ex: {'temperature.csv': 'sthlm_temp'}
+    - flag (str): A string indicating the dataset flag (e.g., 'train', 'val', 'test').
+    - features (str): A string indicating the type of features ('M', 'S', 'MS').
+    - seq_len (int): The input length.
+    - pred_len (int): The prediction length.
+    - train_share (float): The proportion of data to use for training.
+    - test_share (float): The proportion of data to use for testing.
+    """
+
+    def __init__(self, root_path, data_paths_targets, flag, features, seq_len, pred_len, train_share=0.7,
+                 test_share=0.2):
+        self.data_paths_targets = data_paths_targets
+        self.flag = flag
+        self.features = features
+        self.seq_len = seq_len
+        self.pred_len = pred_len
+        self.train_share = train_share
+        self.test_share = test_share
+
+        assert features in ['M', 'S', 'MS']
+
+        self.datasets = []
+
+        # Initialize SimpleDataset instances for each dataset
+        for data_path, target in data_paths_targets.items():
+            dataset = SimpleDataset(
+                root_path=root_path,
+                data_path=data_path,
+                flag=flag,
+                features=features,
+                target=target,
+                seq_len=seq_len,
+                pred_len=pred_len,
+                train_share=train_share,
+                test_share=test_share
+            )
+            self.datasets.append(dataset)
+
+    def __len__(self):
+        # length is length of all dataset, using __len__ in SimpleDataset class
+        self.total_length = sum(len(dataset) for dataset in self.datasets)
+        return self.total_length
+
+    def __getitem__(self, index):
+        # index is a "global" index and we thus need to find which dataset it corresponds to
+        dataset_index = 0
+        cumulative_length = len(self.datasets[0])
+        while index >= cumulative_length:
+            dataset_index += 1
+            cumulative_length += len(self.datasets[dataset_index])
+
+        # we subtract the length of the datasets we have iterated past to get local index
+        local_index = index - (cumulative_length - len(self.datasets[dataset_index]))
+
+        # sample from the chosen dataset
+        return self.datasets[dataset_index][local_index]
+
+
 class SimpleDataProvider:
-    def __init__(self, args, flag):
+    def __init__(self, args, flag, multi_data=False):
         if flag == 'test':
             shuffle_flag = False
             drop_last = True
@@ -80,16 +142,25 @@ class SimpleDataProvider:
             shuffle_flag = True
             drop_last = True
             batch_size = args.batch_size
-
-        self.dataset = SimpleDataset(
-            root_path=args.root_path,
-            data_path=args.data_path,
-            flag=flag,
-            seq_len=args.seq_len,
-            pred_len=args.pred_len,
-            features=args.features,
-            target=args.target,
-        )
+        if not multi_data:
+            self.dataset = SimpleDataset(
+                root_path=args.root_path,
+                data_path=args.data_path,
+                flag=flag,
+                seq_len=args.seq_len,
+                pred_len=args.pred_len,
+                features=args.features,
+                target=args.target,
+            )
+        else:
+            self.dataset = MultiDataset(
+                root_path=args.root_path,
+                data_paths_targets=args.data_paths_targets,
+                flag=flag,
+                seq_len=args.seq_len,
+                pred_len=args.pred_len,
+                features=args.features,
+            )
         print(flag, len(self.dataset))
         self.data_loader = DataLoader(
             dataset=self.dataset,
@@ -104,5 +175,3 @@ class SimpleDataProvider:
 
     def get_dataset_data_loader(self):
         return self.dataset, self.data_loader
-
-

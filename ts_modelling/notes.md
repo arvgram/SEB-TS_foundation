@@ -21,6 +21,17 @@ A: Malmo B: Katterjakk
   - Between epoch mixing
 
 
+## 23 april:
+on incremental learning:
+for each: point and line graph
+- One with exchange rate
+- one in "nice order"
+- one in shuffled order 
+
+
+## Notes after incremental learning experiment:
+
+
 # Experiments:
 ## Transferability of knowledge (synthetic data)
 - Datasets: even sine, odd sine, trends, combination (odd sine+even sine+trends), joker (sines of totally different frequencies, other trends)\

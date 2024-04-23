@@ -45,8 +45,12 @@ class SimpleExp(Exp_Basic):
         )
 
     def _get_data(self, flag):
-        # data_set, data_loader = data_provider(self.args, flag)  # todo: make own simpler dataloader, w/o freqenc etc DONE:)
-        self.data_provider = SimpleDataProvider(self.args, flag)
+        # data_set, data_loader = data_provider(self.args, flag)  # todo: make own dataloader, w/o freqenc etc DONE:)
+        if self.args.multi_data:
+            if not hasattr(self.args, 'data_paths_targets') or not isinstance(self.args.data_paths_targets, dict):
+                raise ValueError("To use multi_data data_paths_targets must exist in args and be a dictionary")
+
+        self.data_provider = SimpleDataProvider(self.args, flag, multi_data=self.args.multi_data)
         data_set, data_loader = self.data_provider.get_dataset_data_loader()
         return data_set, data_loader
 
