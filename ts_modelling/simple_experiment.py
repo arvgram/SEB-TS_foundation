@@ -390,7 +390,8 @@ class SimpleExp(Exp_Basic):
             self.args.data_path = self.args.test_data
         if target is not None:
             self.args.target = target
-
+        was_multi_data = self.args.multi_data
+        self.args.multi_data = False
         test_data, test_loader = self._get_data(flag='test')
 
         preds = []
@@ -449,6 +450,7 @@ class SimpleExp(Exp_Basic):
         )
 
         self.args.data_path = old_data_path
+        self.args.multi_data = was_multi_data
 
     def plot_preds(self, nbr_plots=3, show=True):
         from matplotlib import pyplot as plt
