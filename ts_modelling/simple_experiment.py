@@ -201,7 +201,7 @@ class SimpleExp(Exp_Basic):
 
         tot_time_start = time.time()
         if self.args.multi_data:
-            names_targets = [f"{key}: {value}" for key, value in self.args.datasets_targets.items()]
+            names_targets = [f"{key}: {value}" for key, value in self.args.data_paths_targets.items()]
             s = ', '.join(names_targets)
             print('Training on multiple dataset: ')
             print(s)
