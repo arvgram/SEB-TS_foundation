@@ -200,8 +200,13 @@ class SimpleExp(Exp_Basic):
         print(f"{'Total parameters:': <{21}}{total_params:>12}")
 
         tot_time_start = time.time()
-
-        print(f'Training on data: {self.args.data_path}')
+        if self.args.multi_data:
+            names_targets = [f"{key}: {value}" for key, value in self.args.datasets_targets.items()]
+            s = ', '.join(names_targets)
+            print('Training on multiple dataset: ')
+            print(s)
+        else:
+            print(f'Training on data: {self.args.data_path}')
         train_data, train_loader = self._get_data(flag='train')
         val_data, val_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
