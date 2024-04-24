@@ -83,7 +83,7 @@ class MultiDataset(Dataset):
     - test_share (float): The proportion of data to use for testing.
     """
 
-    def __init__(self, root_path, data_paths_targets, flag, features, seq_len, pred_len, train_share=0.7,
+    def __init__(self, root_path, data_paths_targets, flag, features, seq_len, pred_len, train_share=0.6,
                  test_share=0.2):
         self.data_paths_targets = data_paths_targets
         self.flag = flag
@@ -112,6 +112,7 @@ class MultiDataset(Dataset):
             )
             self.datasets.append(dataset)
         self.cols = [col for d in self.datasets for col in d.cols]
+
     def __len__(self):
         # length is length of all dataset, using __len__ in SimpleDataset class
         self.total_length = sum(len(dataset) for dataset in self.datasets)
@@ -133,7 +134,7 @@ class MultiDataset(Dataset):
 
 
 class SimpleDataProvider:
-    def __init__(self, args, flag, multi_data=False):
+    def __init__(self, args, flag):
         if flag == 'test':
             shuffle_flag = False
             drop_last = True
@@ -142,25 +143,15 @@ class SimpleDataProvider:
             shuffle_flag = True
             drop_last = True
             batch_size = args.batch_size
-        if not multi_data:
-            self.dataset = SimpleDataset(
-                root_path=args.root_path,
-                data_path=args.data_path,
-                flag=flag,
-                seq_len=args.seq_len,
-                pred_len=args.pred_len,
-                features=args.features,
-                target=args.target,
-            )
-        else:
-            self.dataset = MultiDataset(
-                root_path=args.root_path,
-                data_paths_targets=args.data_paths_targets,
-                flag=flag,
-                seq_len=args.seq_len,
-                pred_len=args.pred_len,
-                features=args.features,
-            )
+
+        self.dataset = MultiDataset(
+            root_path=args.root_path,
+            data_paths_targets=args.data_paths_targets,
+            flag=flag,
+            seq_len=args.seq_len,
+            pred_len=args.pred_len,
+            features=args.features,
+        )
         print(flag, len(self.dataset))
         self.data_loader = DataLoader(
             dataset=self.dataset,

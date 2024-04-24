@@ -4,6 +4,7 @@ import random
 
 import numpy as np
 import torch
+import yaml
 
 from PatchTST.PatchTST_supervised.exp.exp_basic import Exp_Basic
 from PatchTST.PatchTST_supervised.models import PatchTST
@@ -18,7 +19,7 @@ from models import naive_predictor
 from models import pattern_repeating_predictor
 from models import daily_repeating_predictor
 
-from utils.results_utils import write_to_metrics_csv
+from utils.results_utils import write_to_metrics_csv, plot_preds
 from simple_data_provider import SimpleDataProvider
 from models.model_components import PretrainHead
 
@@ -43,6 +44,7 @@ class SimpleExp(Exp_Basic):
             './test_results/',
             self.args.model_name
         )
+        self.train_history = []
 
     def _get_data(self, flag):
         # data_set, data_loader = data_provider(self.args, flag)  # todo: make own dataloader, w/o freqenc etc DONE:)
@@ -50,7 +52,7 @@ class SimpleExp(Exp_Basic):
             if not hasattr(self.args, 'data_paths_targets') or not isinstance(self.args.data_paths_targets, dict):
                 raise ValueError("To use multi_data data_paths_targets must exist in args and be a dictionary")
 
-        self.data_provider = SimpleDataProvider(self.args, flag, multi_data=self.args.multi_data)
+        self.data_provider = SimpleDataProvider(self.args, flag)
         data_set, data_loader = self.data_provider.get_dataset_data_loader()
         return data_set, data_loader
 
@@ -200,13 +202,10 @@ class SimpleExp(Exp_Basic):
         print(f"{'Total parameters:': <{21}}{total_params:>12}")
 
         tot_time_start = time.time()
-        if self.args.multi_data:
-            names_targets = [f"{key}: {value}" for key, value in self.args.data_paths_targets.items()]
-            s = ', '.join(names_targets)
-            print('Training on multiple dataset: ')
-            print(s)
-        else:
-            print(f'Training on data: {self.args.data_path}')
+        names_targets = [f"{key}: {value}" for key, value in self.args.data_paths_targets.items()]
+        s = ', '.join(names_targets)
+        print('Training on data: ')
+        print(s)
         train_data, train_loader = self._get_data(flag='train')
         val_data, val_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
@@ -224,6 +223,12 @@ class SimpleExp(Exp_Basic):
         optimiser = self._select_optimizer()
         criterion = self._select_criterion()
         scheduler = self._select_lr_scheduler(optimiser, train_steps, epochs=n_epochs)
+
+        entry = {'data_targets': self.args.data_paths_targets,
+                 'epochs': n_epochs,
+                 'training_task': self.args.training_task
+                 }
+        self.train_history.append(entry)
 
         for epoch in range(n_epochs):
             epoch_time_start = time.time()
@@ -311,98 +316,90 @@ class SimpleExp(Exp_Basic):
         self.model.train()
         return np.average(total_loss)
 
-    def pretrain_model(self, n_epochs=None, data=None, task='self_supervised'):
+    def pretrain_model(self, n_epochs=None, data_path_target=None, task='self_supervised'):
         """If needed attaches pretrain head and trains on self_supervised setting"""
         # data is string w/ path to pretrain data, else data_path and n_epochs are retrieved
         # from a dict in args
-        if data is not None:
-            data_dict = {data: n_epochs if n_epochs is not None else 3}
-        else:
-            data_dict = self.args.pretrain_data
-
+        old_data_target = self.args.data_paths_targets
+        if data_path_target is not None:
+            self.args.data_paths_targets = data_path_target
+        if n_epochs is None:
+            n_epochs = self.args.pretrain_epochs
         if not isinstance(self.model.model.head, PretrainHead):
             self.swap_head(new_head=task)
-        old_data = self.args.data_path
-        self.args.training_task = task
-        for data_key in data_dict:
-            if self.args.verbose:
-                print(f'Pretraining: {self.args.model_name} on data: {data_key} for {data_dict[data_key]} epochs')
-            self.swap_train_data(data_key)
-            self.train(n_epochs=data_dict[data_key])
-        self.args.data_path = old_data
 
-    def train_predict_head(self, n_epochs=None, data=None, task='supervised'):
+        self.args.training_task = task
+        if self.args.verbose:
+            print(f'Pretraining: {self.args.model_name} for {n_epochs} epochs')
+        self.train(n_epochs=n_epochs)
+
+        self.args.data_paths_targets = old_data_target
+
+    def train_head(self, n_epochs=None, data_path_target=None, task='supervised'):
         """if needed attaches prediction head and trains only head with frozen backbone"""
 
         # data is string w/ path to pretrain data or data_path and n_epochs are retrieved
         # from a dict in args
-        if data is not None:
-            data_dict = {data: n_epochs if n_epochs is not None else 3}
-        else:
-            data_dict = self.args.train_head_data
+        old_data_target = self.args.data_paths_targets
+        if data_path_target is not None:
+            self.args.data_paths_targets = data_path_target
+        if n_epochs is None:
+            n_epochs = self.args.train_head_epochs
         if not isinstance(self.model.model.head, Flatten_Head):
             self.swap_head(new_head=task)
 
-        old_data = self.args.data_path
-        self.args.training_task = 'supervised'
+        self.args.training_task = task
         self.freeze_backbone(freeze=True)
 
-        for data_key in data_dict:
-            self.args.data_path = data_key
-            if self.args.verbose:
-                print(f'Training pred head: {self.args.model_name} on data: {data_key} for {data_dict[data_key]} epochs')
-            self.train(n_epochs=data_dict[data_key])
+        if self.args.verbose:
+            print(f'Training pred head: {self.args.model_name} on data: {n_epochs} epochs')
+            self.train(n_epochs=n_epochs)
 
-        self.args.data_path = old_data
+        self.args.data_paths_targets = old_data_target
 
-    def finetune_model(self, n_epochs=None, data=None, task='supervised'):
+    def finetune_model(self, n_epochs=None, data_path_target=None, task='supervised'):
         """unfreezes all parameters and trains"""
         # data is string w/ path to pretrain data or data_path and n_epochs are retrieved
         # from a dict in args
-
-        if data is not None:
-            data_dict = {data: n_epochs if n_epochs is not None else 3}
-        else:
-            data_dict = self.args.finetune_data
+        old_data_target = self.args.data_paths_targets
+        if data_path_target is not None:
+            self.args.data_paths_targets = data_path_target
+        if n_epochs is None:
+            n_epochs = self.args.finetune_epochs
         if not isinstance(self.model.model.head, Flatten_Head):
             self.swap_head(new_head=task)
 
-        old_data = self.args.data_path
-        self.args.training_task = 'supervised'
+        self.args.training_task = task
         self.freeze_backbone(freeze=False)
 
-        for data_key in data_dict:
-            self.args.data_path = data_key
-            if self.args.verbose:
-                print(f'Finetuning: {self.args.model_name} on data: {data_key} for {data_dict[data_key]} epochs')
-            self.train(n_epochs=data_dict[data_key])
+        if self.args.verbose:
+            print(f'Finetuning: {self.args.model_name} for {n_epochs} epochs')
+            self.train(n_epochs=n_epochs)
 
-        self.args.data_path = old_data
+        self.args.data_paths_targets = old_data_target
 
-    def test(self, data_path=None, target=None):
+    def test(self, data_path_target=None):
         """Test on test chunk of training data
         returns average test loss, saves trues and predictions to folder input_pred_true
         """
-        old_data_path = self.args.data_path
-        if data_path is not None:
-            self.args.data_path = data_path
-        else:
-            self.args.data_path = self.args.test_data
-        if target is not None:
-            self.args.target = target
-        was_multi_data = self.args.multi_data
-        self.args.multi_data = False
+        old_data_target = self.args.data_paths_targets
+        if data_path_target is not None:
+            self.args.data_paths_targets = data_path_target
         test_data, test_loader = self._get_data(flag='test')
-
+        cols = test_data.cols
         preds = []
         trues = []
         inputs = []
-
         os.makedirs(self.test_results_path, exist_ok=True)
 
+        dataset = [k for k in self.args.data_paths_targets]
+        target = [v for v in self.args.data_paths_targets.values()]
+        names_targets = [f"{key}: {value}" for key, value in zip(dataset, target)]
+        s = ', '.join(names_targets)
         self.model.eval()
         if self.args.verbose:
-            print(f'Testing {self.args.model_name} on {self.args.data_path}')
+            print(f'Testing {self.args.model_name} on {s}')
+        cols = cols if self.args == 'M' else target
 
         with (torch.no_grad()):
             for i, (batch_x, batch_y) in enumerate(test_loader):
@@ -427,7 +424,7 @@ class SimpleExp(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         inputs = inputs.reshape(-1, inputs.shape[-2], inputs.shape[-1])
 
-        filename = os.path.basename(self.args.data_path)
+        filename = os.path.basename(dataset[0])
         data_name, suffix = os.path.splitext(filename)
 
         output_path = os.path.join(self.test_results_path, 'input_pred_true/', data_name)
@@ -437,75 +434,47 @@ class SimpleExp(Exp_Basic):
         np.save(output_path + '/pred.npy', preds)
         np.save(output_path + '/true.npy', trues)
 
+        data_names = {
+            'dataset': dataset,
+            'columns': cols
+        }
+
+        with open(output_path+'/data_names.yaml', 'w') as file:
+            yaml.dump(data_names, file)
+
         write_to_metrics_csv(
             preds=preds,
             trues=trues,
             model_type=self.args.model,
             model_name=self.args.model_name,
-            pretrain_data=self.args.pretrain_data,
-            finetune_data=self.args.finetune_data,
-            train_head_data=self.args.train_head_data,
-            test_data=self.args.data_path,
+            train_history=self.train_history,
+            test_data=data_name,
+            target='_'.join(cols),
             folder_path='./test_results/',
         )
 
-        self.args.data_path = old_data_path
-        self.args.multi_data = was_multi_data
+        self.args.data_paths_targets = old_data_target
 
-    def plot_preds(self, nbr_plots=3, show=True):
-        from matplotlib import pyplot as plt
+    def plot_preds(self, nbr_plots=3, test_results_path=None):
+        if test_results_path is None:
+            test_results_path = self.test_results_path
+        plot_preds(test_results_path, nbr_plots=nbr_plots)
 
-        # output path is where the test predictions are located
-        output_path = os.path.join(self.test_results_path, 'input_pred_true')
-        plot_path = os.path.join(self.test_results_path, 'plots/')
-        os.makedirs(plot_path, exist_ok=True)
-
-        for folder_name in os.listdir(output_path):
-            current_dir = os.path.join(output_path, folder_name)
-            preds = np.load(current_dir + '/pred.npy')
-            trues = np.load(current_dir + '/true.npy')
-            inputs = np.load(current_dir + '/input.npy')
-
-            current_plot_path = os.path.join(plot_path, folder_name)
-            os.makedirs(current_plot_path, exist_ok=True)
-
-            interval = trues.shape[0] // nbr_plots
-            for i in range(nbr_plots):
-                for j, col in zip(range(preds.shape[2]), self.data_provider.get_cols()):
-                    idx = i * interval
-
-                    y = trues[idx, :, j]
-                    yhat = preds[idx, :, j]
-                    x = inputs[idx, :, j]
-
-                    plt.figure()
-
-                    plt.plot(x, label='input')
-                    plt.plot(range(len(x), len(x) + len(y)), y, label='true', alpha=0.5)
-                    plt.plot(range(len(x), len(x) + len(y)), yhat, label='pred')
-                    plt.title(f'Predictions for variable: {col}, data: {folder_name}')
-                    plt.legend()
-                    plt.savefig(
-                        os.path.join(current_plot_path, f'data-{folder_name}_channel-{col}_batch-{i}.pdf'),
-                        format='pdf')
-                    if show:
-                        plt.show()
-                    plt.close()
-
-    def swap_train_data(self, new_data_path, new_target=None):
-        if new_target is not None:
-            self.args.target = new_target
+    def swap_train_data(self, new_data_path_target):
         if self.args.verbose:
-            print(f'Swapping to {new_data_path}')
-        self.args.data_path = new_data_path
+            names_targets = [f"{key}: {value}" for key, value in new_data_path_target.items()]
+            s = ', '.join(names_targets)
+            print(f'Swapping to {s}')
+        self.args.data_paths_targets = new_data_path_target
         val_data, val_loader = self._get_data(flag='val')
         criterion = self._select_criterion()
         val_loss = self.validate(val_loader, criterion)
-        print(f'Initial validation loss on {new_data_path}: {val_loss:.5}')
+        if self.args.verbose:
+            print(f'Initial validation loss on {s}: {val_loss:.5}')
         self.best_score = -val_loss
         self.val_loss_min = val_loss
 
-    def test_on_new_data(self, data_path):
+    def test_on_new_data(self, dataexp_path):
         """use this to test on dataset that was not in training"""
         old_path = self.args.data_path
 

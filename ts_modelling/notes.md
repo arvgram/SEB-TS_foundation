@@ -107,6 +107,24 @@ What will be interesting is if the model can keep track of datasets with differe
 
 
 # Todo:
+- rewrite plotting to fit multi-learn
+- test multi-learn:
+- for model in:
+  - Patch_small, 
+  - Patch_norm, 
+  - Patch_large, 
+  - Patch_small_self, 
+  - Patch_norm_self, 
+  - Patch_large_self,
+  - Linear, 
+  - NLinear, 
+  - DLinear, 
+  - Naive, 
+  - daily repeater, 
+  - full repeater
+- Train on multidata, test on components
+- compare with expert_models
+
 - Analyse incremental learning results
 - Write graphs/tables to populate with the main experiment
 - Incremental learning experiment: (done-ish)
@@ -120,7 +138,7 @@ What will be interesting is if the model can keep track of datasets with differe
       - learning rate <- 10^-5
     - test out of the box on unseen data: ETTh2, other temperature, other traffic
 - find a good schema for learning rate when doing pretraining/finetuning
-
+- if time: adapt everything to always use Multidataset
 
 
 ### Finished:
