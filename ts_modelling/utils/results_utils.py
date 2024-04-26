@@ -10,6 +10,7 @@ def write_to_metrics_csv(preds, trues, model_type, model_name, train_history, te
         h = h + '.' + str(entry['epochs'])
         h = h + '.' + entry['training_task'] + '__'
         history = history + h
+    history = history[:-2]
 
     test_data_name = os.path.basename(test_data)
     test_data_name, suffix = os.path.splitext(test_data_name)
