@@ -103,12 +103,46 @@ What will be interesting is if the model can keep track of datasets with differe
 # Other
 ## Thoughts:
 - The positional encoding is an additive matrix of dimension DxN, meaning each dimension in the latent space gets an assigned number for each patch. Does this not mean that the time granularity for keeping track of frequencies is reduced to ```patch_len```?
-- How to train on several datasets without overwriting previous knowledge?
+- How to train on several datasets without overwriting previous knowledge? Train on all simultaneously :)
+- Casual self-attention? 
 
 
 # Todo:
+- redo incremental in other order
+- Populate slides after feedback
+- redo multi-learn experiment with: 
+  - normalised loss
+  - also self-supervised 
+  - target specific test logging
+- Go over thesis
+  - Go over Amin's comments
+- Write about experiments we have done
+  - Multi learning:
+    - Setup done
+    - results need to redo
+    - comment
+- Write problem definition (create a function that maps x to x)
+
+- implement dreaming
+- test dreaming
+- implement normalised loss 
+- Make staddle model :)
+
+- more data in order to keep benchmark data
+- find a good schema for learning rate when doing pretraining/finetuning
+
+### Finished:- 
+Finish slides for presentation
+  - Send to Amin and Rahul
+- Incremental learning:
+  - Setup done
+  - results done
+  - comments done
+- Write about datasets
+- Write about Linear models
+- Write about previous transformer based models
 - rewrite plotting to fit multi-learn
-- test multi-learn:
+- - test multi-learn: (done-ish)
 - for model in:
   - Patch_small, 
   - Patch_norm, 
@@ -125,8 +159,6 @@ What will be interesting is if the model can keep track of datasets with differe
 - Train on multidata, test on components
 - compare with expert_models
 
-- Analyse incremental learning results
-- Write graphs/tables to populate with the main experiment
 - Incremental learning experiment: (done-ish)
   - datasets = [traffic_small('2'), temp_small, ETTh1, Illness, Exchange]
   - train an expert model for each dataset, save MSE and NRV
@@ -137,11 +169,8 @@ What will be interesting is if the model can keep track of datasets with differe
       - test on all datasets
       - learning rate <- 10^-5
     - test out of the box on unseen data: ETTh2, other temperature, other traffic
-- find a good schema for learning rate when doing pretraining/finetuning
+- Analyse incremental learning results
 - if time: adapt everything to always use Multidataset
-
-
-### Finished:
 - when switching datasets, validate first so that validation loss is compared to out of box performance of new dataset
 - Add inherited loss to finetuning
 - Analyse effect of pretraining etc
