@@ -454,10 +454,10 @@ class SimpleExp(Exp_Basic):
 
         self.args.data_paths_targets = old_data_target
 
-    def plot_preds(self, nbr_plots=3, test_results_path=None):
+    def plot_preds(self, test_results_path=None, nbr_plots=3, show=True):
         if test_results_path is None:
             test_results_path = self.test_results_path
-        plot_preds(test_results_path, nbr_plots=nbr_plots)
+        plot_preds(test_results_path, nbr_plots=nbr_plots, show=show)
 
     def swap_train_data(self, new_data_path_target):
         if self.args.verbose:
