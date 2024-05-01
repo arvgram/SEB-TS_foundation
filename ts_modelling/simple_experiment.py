@@ -22,6 +22,7 @@ from models import daily_repeating_predictor
 from utils.results_utils import write_to_metrics_csv, plot_preds
 from simple_data_provider import SimpleDataProvider
 from models.model_components import PretrainHead
+from replay_buffer import ReplayBuffer
 
 from torch import optim
 from torch import nn
@@ -45,6 +46,9 @@ class SimpleExp(Exp_Basic):
             self.args.model_name
         )
         self.train_history = []
+        if hasattr(self.args, 'use_replay'):
+            if self.args.use_replay:
+                self.rb = ReplayBuffer(capacity=self.args.buffer_capacity)
 
     def _get_data(self, flag):
         # data_set, data_loader = data_provider(self.args, flag)  # todo: make own dataloader, w/o freqenc etc DONE:)
@@ -236,10 +240,29 @@ class SimpleExp(Exp_Basic):
             self.model.train()
 
             for i, (batch_x, batch_y) in enumerate(train_loader):
+                print(f'before x: {len(batch_x)}, y: {len(batch_y)}')
                 optimiser.zero_grad()
-                batch_x, batch_y = batch_x.float().to(self.device), batch_y.float().to(self.device)
                 # supervised training outputs = [bs x nvars x pred_len] forward prediction
                 # self supervised outputs = [bs x nvars x seq_len]
+
+                if self.args.use_replay:
+                    batch_size = len(batch_x)
+                    # draw a sample from buffer
+                    nbr_replay_samples = int(batch_size*self.args.replay_mix_fraction)
+                    nbr_save_samples = int(batch_size*self.args.replay_save_fraction)
+                    replay_samples = self.rb.sample(nbr_replay_samples)
+
+                    # add samples to buffer
+                    for bx, by in zip(batch_x[:nbr_save_samples], batch_y[:nbr_save_samples]):
+                        self.rb.add((bx, by))
+
+                    for sample in replay_samples:
+                        replay_x, replay_y = sample
+                        batch_x = torch.cat((batch_x, replay_x.unsqueeze(0)), dim=0)
+                        batch_y = torch.cat((batch_y, replay_y.unsqueeze(0)), dim=0)
+
+                print(f'after x: {len(batch_x)}, y: {len(batch_y)}')
+                batch_x, batch_y = batch_x.float().to(self.device), batch_y.float().to(self.device)
 
                 # infer_and_get_loss performs the training task (prediction/self_supervised) and returns the batch loss
                 loss = self.infer_and_get_loss(

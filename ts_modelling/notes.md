@@ -104,35 +104,44 @@ What will be interesting is if the model can keep track of datasets with differe
 ## Thoughts:
 - The positional encoding is an additive matrix of dimension DxN, meaning each dimension in the latent space gets an assigned number for each patch. Does this not mean that the time granularity for keeping track of frequencies is reduced to ```patch_len```?
 - How to train on several datasets without overwriting previous knowledge? Train on all simultaneously :)
-- Casual self-attention? 
+- Causal self-attention? 
 
 
 # Todo:
-- redo incremental in other order
-- Populate slides after feedback
-- redo multi-learn experiment with: 
-  - normalised loss
-  - also self-supervised 
-  - target specific test logging
-- Go over thesis
-  - Go over Amin's comments
+Tuesday:
+  - Finish slides 
+Wednesday:
+- redo multi-learn experiment with target specific test logging:
+  - also self-supervised
+  - redo for different combinations of left-out-data
+- implement normalised loss while running
+- implement dreaming
+
 - Write about experiments we have done
   - Multi learning:
     - Setup done
     - results need to redo
     - comment
-- Write problem definition (create a function that maps x to x)
+
+- Test incremental on out of sample data
+
+- Go over thesis
+  - Go over Amin's comments
 
 - implement dreaming
 - test dreaming
-- implement normalised loss 
+- 
 - Make staddle model :)
 
-- more data in order to keep benchmark data
+- more data in order to keep benchmark data: https://www.kaggle.com/datasets/robikscube/hourly-energy-consumption
+
+Maybe not:
 - find a good schema for learning rate when doing pretraining/finetuning
 
 ### Finished:- 
-Finish slides for presentation
+- Write problem definition (create a function that maps x to x)
+- redo incremental in other order: on its way
+- Finish slides for presentation
   - Send to Amin and Rahul
 - Incremental learning:
   - Setup done
