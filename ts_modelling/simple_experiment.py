@@ -339,7 +339,8 @@ class SimpleExp(Exp_Basic):
                     batch_y=batch_y,
                     model=self.model,
                     criterion=criterion,
-                    task=self.args.training_task
+                    task=self.args.training_task,
+                    normalize=self.args.normalize_loss
                 )
 
                 total_loss.append(loss.item())
