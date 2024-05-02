@@ -49,6 +49,11 @@ class SimpleExp(Exp_Basic):
         if hasattr(self.args, 'use_replay'):
             if self.args.use_replay:
                 self.rb = ReplayBuffer(capacity=self.args.buffer_capacity)
+        else:
+            self.args.use_replay = False
+
+        if not hasattr(self.args, 'normalize_loss'):
+            self.normalize_loss = False
 
     def _get_data(self, flag):
         # data_set, data_loader = data_provider(self.args, flag)  # todo: make own dataloader, w/o freqenc etc DONE:)
@@ -101,7 +106,7 @@ class SimpleExp(Exp_Basic):
             model = self._swap_head(model=model, new_head='self_supervised')
         return model
 
-    def infer_and_get_loss(self, batch_x, batch_y, model, criterion, task):
+    def infer_and_get_loss(self, batch_x, batch_y, model, criterion, task, normalize=False):
         if task == 'supervised':
             # get output, calculate loss as criterion of pred and true
             outputs = model(batch_x)
@@ -109,6 +114,11 @@ class SimpleExp(Exp_Basic):
             pred = outputs[:, -self.args.pred_len:, f_dim:]
             true = batch_y[:, -self.args.pred_len:, f_dim:]
 
+            if normalize:
+                eps = 1e-4
+                denom = torch.var(true, dim=1, keepdim=True)+eps
+                true = true/denom
+                pred = pred/denom
             loss = criterion(pred, true)
 
         elif task == 'self_supervised':
@@ -240,7 +250,6 @@ class SimpleExp(Exp_Basic):
             self.model.train()
 
             for i, (batch_x, batch_y) in enumerate(train_loader):
-                print(f'before x: {len(batch_x)}, y: {len(batch_y)}')
                 optimiser.zero_grad()
                 # supervised training outputs = [bs x nvars x pred_len] forward prediction
                 # self supervised outputs = [bs x nvars x seq_len]
@@ -261,7 +270,6 @@ class SimpleExp(Exp_Basic):
                         batch_x = torch.cat((batch_x, replay_x.unsqueeze(0)), dim=0)
                         batch_y = torch.cat((batch_y, replay_y.unsqueeze(0)), dim=0)
 
-                print(f'after x: {len(batch_x)}, y: {len(batch_y)}')
                 batch_x, batch_y = batch_x.float().to(self.device), batch_y.float().to(self.device)
 
                 # infer_and_get_loss performs the training task (prediction/self_supervised) and returns the batch loss
@@ -271,6 +279,7 @@ class SimpleExp(Exp_Basic):
                     model=self.model,
                     criterion=criterion,
                     task=self.args.training_task,
+                    normalize=self.args.normalize_loss
                 )
 
                 train_loss.append(loss.item())

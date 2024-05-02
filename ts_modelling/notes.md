@@ -112,10 +112,23 @@ Tuesday:
   - Finish slides 
 Wednesday:
 - redo multi-learn experiment with target specific test logging:
-  - also self-supervised
-  - redo for different combinations of left-out-data
-- implement normalised loss while running
-- implement dreaming
+  - also self-supervised, it was not good
+  - redo for different combinations of left-out-data, wait with this
+Thursday:
+- implement normalised loss
+- test normalised loss:
+  - small scale
+  - redo multitrain with this
+
+Friday:
+- Test dreaming:
+  - small scale
+  - redo incremental learn setup with dreaming
+- Give presentation
+
+Sunday:
+- Train staddle model. 
+
 
 - Write about experiments we have done
   - Multi learning:
@@ -139,6 +152,7 @@ Maybe not:
 - find a good schema for learning rate when doing pretraining/finetuning
 
 ### Finished:- 
+- implement dreaming
 - Write problem definition (create a function that maps x to x)
 - redo incremental in other order: on its way
 - Finish slides for presentation
