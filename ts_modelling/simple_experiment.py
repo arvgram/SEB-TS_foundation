@@ -116,7 +116,7 @@ class SimpleExp(Exp_Basic):
 
             if normalize:
                 eps = 1e-4
-                denom = torch.var(true, dim=1, keepdim=True)+eps
+                denom = torch.std(true, dim=1, keepdim=True)+eps
                 true = true/denom
                 pred = pred/denom
             loss = criterion(pred, true)
