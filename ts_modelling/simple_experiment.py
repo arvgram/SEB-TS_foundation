@@ -53,7 +53,7 @@ class SimpleExp(Exp_Basic):
             self.args.use_replay = False
 
         if not hasattr(self.args, 'normalize_loss'):
-            self.normalize_loss = False
+            self.args.normalize_loss = False
 
     def _get_data(self, flag):
         # data_set, data_loader = data_provider(self.args, flag)  # todo: make own dataloader, w/o freqenc etc DONE:)
