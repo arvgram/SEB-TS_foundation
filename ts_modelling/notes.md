@@ -108,27 +108,18 @@ What will be interesting is if the model can keep track of datasets with differe
 
 
 # Todo:
-Tuesday:
-  - Finish slides 
-Wednesday:
-- redo multi-learn experiment with target specific test logging:
-  - also self-supervised, it was not good
-  - redo for different combinations of left-out-data, wait with this
-Thursday:
-- implement normalised loss
-- test normalised loss:
-  - small scale
-  - redo multitrain with this
+- Structure:
+  - Incremental w/o decaying lr: decent overall but chaos, forgetting
+  - Incremental in other order: more chaos
+  - Redo dreaming with all columns
+  - Incremental in other order: hopefully less difference in chaos
 
-Friday:
-- Test dreaming:
-  - small scale
-  - redo incremental learn setup with dreaming
-- Give presentation
-
-Sunday:
 - Train staddle model. 
+- Redo incremental in same setting as dreaming.
+- Redo multi training now that we know how a dict works :)
 
+
+- redo for different combinations of left-out-data, wait with this
 
 - Write about experiments we have done
   - Multi learning:
@@ -152,6 +143,26 @@ Maybe not:
 - find a good schema for learning rate when doing pretraining/finetuning
 
 ### Finished:- 
+Friday:
+- redo multi on normalised data
+- Test dreaming:
+  - small scale
+  - redo incremental learn setup with dreaming
+Thursday:
+- implement normalised loss
+- test normalised loss:
+  - small scale
+  - redo multitrain with this
+
+Tuesday:
+  - Finish slides 
+Wednesday:
+- redo multi-learn experiment with target specific test logging:
+  - also self-supervised, it was not good
+- Go over presentation
+- Analyse normalised loss results
+- Practice presentation
+- Give presentation
 - implement dreaming
 - Write problem definition (create a function that maps x to x)
 - redo incremental in other order: on its way

@@ -49,6 +49,8 @@ class SimpleExp(Exp_Basic):
         if hasattr(self.args, 'use_replay'):
             if self.args.use_replay:
                 self.rb = ReplayBuffer(capacity=self.args.buffer_capacity)
+                if self.args.verbose:
+                    print(f'Using a replay buffer with capacity: {self.args.buffer_capacity}')
         else:
             self.args.use_replay = False
 
@@ -57,7 +59,7 @@ class SimpleExp(Exp_Basic):
 
     def _get_data(self, flag):
         # data_set, data_loader = data_provider(self.args, flag)  # todo: make own dataloader, w/o freqenc etc DONE:)
-        if not hasattr(self.args, 'data_paths_targets') or not isinstance(self.args.data_paths_targets, dict):
+        if not hasattr(self.args, 'data_paths_targets'):
             raise ValueError("Specify data_paths_targets on format {'dataset.csv': 'target_col_in_data'}")
 
         self.data_provider = SimpleDataProvider(self.args, flag)
@@ -295,8 +297,8 @@ class SimpleExp(Exp_Basic):
                     break
 
             train_loss = np.average(train_loss)
-            val_loss = self.validate(val_loader, criterion)
-            test_loss = self.validate(test_loader, criterion)
+            val_loss = self.validate(val_loader, criterion, normalize=self.args.normalize_loss)
+            test_loss = self.validate(test_loader, criterion, normalize=False)
 
             if (epoch + 1) % self.args.epoch_log_interval == 0:
                 print(
@@ -325,7 +327,7 @@ class SimpleExp(Exp_Basic):
 
         print(f'Total training time: {int(minutes)} minutes {seconds} seconds')
 
-    def validate(self, val_loader, criterion):
+    def validate(self, val_loader, criterion, normalize=False):
         total_loss = []
         self.model.eval()
 
@@ -340,7 +342,7 @@ class SimpleExp(Exp_Basic):
                     model=self.model,
                     criterion=criterion,
                     task=self.args.training_task,
-                    normalize=self.args.normalize_loss
+                    normalize=normalize
                 )
 
                 total_loss.append(loss.item())
